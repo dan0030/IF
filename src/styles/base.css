@@ -967,6 +967,10 @@ form.search-field input:focus {
 
 /* ---------------- 본문 창 (One UI 인터넷 앱 모양) ---------------- */
 
+/* 본문 창을 끈 상태: 감싼 상자가 없는 것처럼 보이게 */
+.frame-off {
+  display: contents;
+}
 .page.framed {
   max-width: var(--frame-width, var(--content-width));
 }

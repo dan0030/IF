@@ -39,13 +39,10 @@ export function Shell({ children }) {
         {/* 본문 창을 쓸 땐 상단바 버튼들이 창의 주소줄 안으로 들어가요. */}
         {!useFrame && <TopBar title={title} collapsed={collapsed} onMenu={() => setDrawerOpen(true)} showMenu={nav !== 'bottom'} />}
         <main className={`page ${useFrame ? 'framed' : ''}`} id="main">
-          {useFrame ? (
-            <BrowserFrame path={loc.path + loc.search} showUrl={app.theme.frameBar !== false} onMenu={nav !== 'bottom' ? () => setDrawerOpen(true) : null}>
-              {children}
-            </BrowserFrame>
-          ) : (
-            children
-          )}
+          {/* 창을 켜고 끌 때도 본문이 다시 그려지지 않도록 늘 같은 구조로 감싸요. (관리 화면 입력값이 사라지지 않게) */}
+          <BrowserFrame on={useFrame} path={loc.path + loc.search} showUrl={app.theme.frameBar !== false} onMenu={nav !== 'bottom' ? () => setDrawerOpen(true) : null}>
+            {children}
+          </BrowserFrame>
         </main>
         <Footer />
         {nav !== 'drawer' && <BottomNav path={loc.path} />}
@@ -363,7 +360,7 @@ function Footer() {
 }
 
 /* One UI 인터넷 앱 느낌의 본문 창. 주소줄에 메뉴·검색·모드·글쓰기 버튼이 함께 들어가요. */
-function BrowserFrame({ path, showUrl, onMenu, children }) {
+function BrowserFrame({ on, path, showUrl, onMenu, children }) {
   const app = useApp()
   const url = `${window.location.host}${decodeURIComponent(path)}`
   async function copy() {
@@ -375,45 +372,47 @@ function BrowserFrame({ path, showUrl, onMenu, children }) {
     }
   }
   return (
-    <div className="browser-frame">
-      <div className={`browser-bar ${showUrl ? '' : 'no-url'}`}>
-        {onMenu ? (
-          <button type="button" className="browser-btn" onClick={onMenu} aria-label="메뉴 열기">
-            <i className="fa-solid fa-bars" />
-          </button>
-        ) : (
-          <a href="/" className="browser-btn" aria-label="홈">
-            <i className="fa-solid fa-house" />
+    <div className={on ? 'browser-frame' : 'frame-off'}>
+      {on && (
+        <div className={`browser-bar ${showUrl ? '' : 'no-url'}`}>
+          {onMenu ? (
+            <button type="button" className="browser-btn" onClick={onMenu} aria-label="메뉴 열기">
+              <i className="fa-solid fa-bars" />
+            </button>
+          ) : (
+            <a href="/" className="browser-btn" aria-label="홈">
+              <i className="fa-solid fa-house" />
+            </a>
+          )}
+          {showUrl && (
+            <button type="button" className="browser-btn back" onClick={() => window.history.back()} aria-label="뒤로" disabled={path === '/'}>
+              <i className="fa-solid fa-arrow-left" />
+            </button>
+          )}
+          {showUrl ? (
+            <button type="button" className="browser-url" onClick={copy} title="주소 복사">
+              <i className="fa-solid fa-lock" />
+              <span>{url}</span>
+            </button>
+          ) : (
+            <span className="browser-spacer" />
+          )}
+          <a href="/search" className="browser-btn" aria-label="검색">
+            <i className="fa-solid fa-magnifying-glass" />
           </a>
-        )}
-        {showUrl && (
-          <button type="button" className="browser-btn back" onClick={() => window.history.back()} aria-label="뒤로" disabled={path === '/'}>
-            <i className="fa-solid fa-arrow-left" />
-          </button>
-        )}
-        {showUrl ? (
-          <button type="button" className="browser-url" onClick={copy} title="주소 복사">
-            <i className="fa-solid fa-lock" />
-            <span>{url}</span>
-          </button>
-        ) : (
-          <span className="browser-spacer" />
-        )}
-        <a href="/search" className="browser-btn" aria-label="검색">
-          <i className="fa-solid fa-magnifying-glass" />
-        </a>
-        {app.theme.allowToggle !== false && (
-          <button type="button" className="browser-btn" onClick={app.toggleMode} aria-label={app.mode === 'dark' ? '라이트 모드로' : '다크 모드로'}>
-            <i className={`fa-solid ${app.mode === 'dark' ? 'fa-sun' : 'fa-moon'}`} />
-          </button>
-        )}
-        {app.admin && (
-          <a href="/write" className="browser-btn accent" aria-label="글쓰기">
-            <i className="fa-solid fa-pen" />
-          </a>
-        )}
-      </div>
-      <div className="browser-body">{children}</div>
+          {app.theme.allowToggle !== false && (
+            <button type="button" className="browser-btn" onClick={app.toggleMode} aria-label={app.mode === 'dark' ? '라이트 모드로' : '다크 모드로'}>
+              <i className={`fa-solid ${app.mode === 'dark' ? 'fa-sun' : 'fa-moon'}`} />
+            </button>
+          )}
+          {app.admin && (
+            <a href="/write" className="browser-btn accent" aria-label="글쓰기">
+              <i className="fa-solid fa-pen" />
+            </a>
+          )}
+        </div>
+      )}
+      <div className={on ? 'browser-body' : 'frame-off'}>{children}</div>
     </div>
   )
 }
