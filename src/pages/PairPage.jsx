@@ -39,6 +39,8 @@ function defaultConfig(site) {
     eyebrow: 'PAIR ARCHIVE',
     title: site.pair?.pairName || '',
     subtitle: '',
+    statusView: 'bar',
+    statusCompare: false,
     chars: [emptyChar(site.pair?.partner?.name || '', '#6b7b8f'), emptyChar(site.pair?.me?.name || '', '#a07a68')],
   }
 }
@@ -254,6 +256,7 @@ function PairDetail({ config, idx, base }) {
           {ch.status?.some((s) => s.label) && (
             <div className="pair-card">
               <h2 className="pair-card-title">스테이터스</h2>
+              <StatusView config={config} idx={idx}>
               <ul className="pair-status">
                 {ch.status
                   .filter((s) => s.label)
@@ -273,6 +276,7 @@ function PairDetail({ config, idx, base }) {
                     )
                   })}
               </ul>
+              </StatusView>
             </div>
           )}
 
@@ -440,11 +444,101 @@ function WikiModal({ title, html, onClose }) {
   )
 }
 
+/* ---------------- 스테이터스 육각형(다각형) 표 ---------------- */
+
+// 스탯 값 0~1 비율 (최대값을 넘거나 숫자가 아니면 잘라요)
+function statRatio(s) {
+  const max = Number(s?.max) || 100
+  return Math.max(0, Math.min(1, (Number(s?.value) || 0) / max))
+}
+
+// 막대 / 막대 + 육각형 / 육각형만. 스탯이 3개보다 적으면 도형을 그릴 수 없어 막대만 보여요.
+function StatusView({ config, idx, children }) {
+  const view = config.statusView || 'bar'
+  const stats = (config.chars[idx].status || []).filter((s) => s.label)
+  if (view === 'bar' || stats.length < 3) return children
+  const other = config.statusCompare ? config.chars[1 - idx] : null
+  return (
+    <div className={`pair-status-wrap view-${view}`}>
+      <StatusRadar stats={stats} self={config.chars[idx]} other={other} />
+      {view === 'both' && children}
+    </div>
+  )
+}
+
+const RADAR_R = 92
+const RADAR_LEVELS = 4
+
+function StatusRadar({ stats, self, other }) {
+  const n = stats.length
+  const point = (i, r) => {
+    const a = -Math.PI / 2 + (2 * Math.PI * i) / n
+    return [Math.cos(a) * r, Math.sin(a) * r]
+  }
+  const poly = (ratios) => ratios.map((v, i) => point(i, RADAR_R * v).map((x) => x.toFixed(1)).join(',')).join(' ')
+  const mine = stats.map(statRatio)
+  // 겹쳐 볼 캐릭터: 같은 이름의 스탯끼리 짝지어요.
+  const otherStats = other ? stats.map((s) => (other.status || []).find((o) => o.label === s.label)) : null
+  return (
+    <figure className="pair-radar">
+      <svg viewBox="-170 -142 340 284" role="img" aria-label={stats.map((s) => `${s.label} ${s.grade || s.value || 0}`).join(', ')}>
+        {Array.from({ length: RADAR_LEVELS }, (_, k) => (
+          <polygon key={k} className="radar-grid" points={poly(Array(n).fill((k + 1) / RADAR_LEVELS))} />
+        ))}
+        {stats.map((_, i) => {
+          const [x, y] = point(i, RADAR_R)
+          return <line key={i} className="radar-axis" x1="0" y1="0" x2={x.toFixed(1)} y2={y.toFixed(1)} />
+        })}
+        {otherStats && <polygon className="radar-area other" points={poly(otherStats.map(statRatio))} style={other.color ? { '--rc': other.color } : undefined} />}
+        <polygon className="radar-area" points={poly(mine)} />
+        {mine.map((v, i) => {
+          const [x, y] = point(i, RADAR_R * v)
+          return <circle key={i} className="radar-dot" cx={x.toFixed(1)} cy={y.toFixed(1)} r="3.2" />
+        })}
+        {stats.map((s, i) => {
+          const [x, y] = point(i, RADAR_R + 20)
+          const anchor = Math.abs(x) < 8 ? 'middle' : x > 0 ? 'start' : 'end'
+          const max = Number(s.max) || 100
+          const val = Math.max(0, Math.min(max, Number(s.value) || 0))
+          return (
+            <text key={i} className="radar-label" x={x.toFixed(1)} y={(y + (y > 8 ? 8 : y < -8 ? -6 : 2)).toFixed(1)} textAnchor={anchor}>
+              <tspan>{s.label}</tspan>
+              <tspan className="radar-value" x={x.toFixed(1)} dy="1.15em">
+                {s.grade || `${val}${max === 100 ? '' : ` / ${max}`}`}
+              </tspan>
+            </text>
+          )
+        })}
+      </svg>
+      {otherStats && (
+        <figcaption className="pair-radar-legend">
+          <span className="me">{self.name || self.subName || '이 캐릭터'}</span>
+          <span className="other" style={other.color ? { '--rc': other.color } : undefined}>
+            {other.name || other.subName || '다른 캐릭터'}
+          </span>
+        </figcaption>
+      )}
+    </figure>
+  )
+}
+
 /* ---------------- 편집 ---------------- */
 
 const PAGE_FIELDS = [
   { key: 'title', label: '페어 이름 (첫 화면 제목)', placeholder: '등대와 철새' },
   { key: 'subtitle', label: '한 줄 소개', placeholder: '겨울마다 한 번씩, 같은 골목에서.' },
+  { type: 'heading', label: '스테이터스 표시', help: '스탯이 3개 이상일 때 육각형(스탯 수만큼 꼭짓점이 있는 도형) 표로 보여줄 수 있어요. 6개면 정육각형이에요.' },
+  {
+    key: 'statusView',
+    label: '모양',
+    type: 'segmented',
+    options: [
+      { value: 'bar', label: '막대' },
+      { value: 'both', label: '막대 + 육각형' },
+      { value: 'radar', label: '육각형만' },
+    ],
+  },
+  { key: 'statusCompare', label: '육각형에 다른 캐릭터 겹쳐 보기', type: 'toggle', help: '두 사람의 스탯을 한 도형에 겹쳐 비교해요.', show: (c) => c.statusView === 'both' || c.statusView === 'radar' },
 ]
 
 const CHAR_BASIC = [

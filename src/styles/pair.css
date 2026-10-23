@@ -452,6 +452,110 @@
   flex-direction: column;
   gap: 14px;
 }
+/* 스테이터스 육각형(다각형) 표 */
+.pair-status-wrap.view-both {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+}
+.pair-status-wrap.view-radar .pair-radar {
+  max-width: 380px;
+  margin-inline: auto;
+}
+@media (max-width: 640px) {
+  .pair-status-wrap.view-both {
+    grid-template-columns: 1fr;
+  }
+  .pair-status-wrap.view-both .pair-radar {
+    max-width: 340px;
+    margin-inline: auto;
+  }
+}
+.pair-radar {
+  margin: 0;
+  width: 100%;
+}
+.pair-radar svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.radar-grid {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.radar-grid:last-of-type {
+  stroke: color-mix(in srgb, var(--text) 22%, transparent);
+}
+.radar-axis {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.radar-area {
+  fill: color-mix(in srgb, var(--pc) 30%, transparent);
+  stroke: color-mix(in srgb, var(--pc) 85%, var(--text));
+  stroke-width: 2;
+  stroke-linejoin: round;
+  animation: radar-in 0.6s var(--ease) both;
+  transform-origin: 0 0;
+}
+.radar-area.other {
+  --rc: var(--text-sub);
+  fill: color-mix(in srgb, var(--rc) 14%, transparent);
+  stroke: color-mix(in srgb, var(--rc) 75%, var(--text));
+  stroke-dasharray: 5 4;
+  stroke-width: 1.5;
+}
+.radar-dot {
+  fill: color-mix(in srgb, var(--pc) 85%, var(--text));
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+.radar-label {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.radar-value {
+  fill: color-mix(in srgb, var(--pc) 60%, var(--text));
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+@keyframes radar-in {
+  from {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+}
+:root[data-anim='off'] .radar-area {
+  animation: none;
+}
+.pair-radar-legend {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--text-sub);
+}
+.pair-radar-legend span::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  border-radius: 3px;
+  vertical-align: -1px;
+  background: color-mix(in srgb, var(--pc) 70%, transparent);
+}
+.pair-radar-legend .other::before {
+  background: none;
+  border: 1.5px dashed color-mix(in srgb, var(--rc, var(--text-sub)) 75%, var(--text));
+}
 .pair-status-head {
   display: flex;
   justify-content: space-between;
