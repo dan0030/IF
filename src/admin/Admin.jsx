@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useApp } from '../lib/store.jsx'
 import { api } from '../lib/api.js'
-import { navigate } from '../lib/router.js'
+import { navigate, scrollRoot } from '../lib/router.js'
 import { formatDate, formatDateTime } from '../lib/format.js'
 import { DEFAULT_THEME, LIST_STYLES, PAGE_TYPES, PRESETS, deepMerge, resolveTheme } from '../lib/defaults.js'
 import { LargeTitle } from '../components/Shell.jsx'
@@ -152,9 +152,28 @@ function DesignTab() {
   const [paletteMode, setPaletteMode] = useState(app.mode)
   const dirty = JSON.stringify(draft) !== JSON.stringify(app.savedTheme)
 
+  // 방금 누른 옵션의 화면 위치. 배경·본문 창·글자 크기가 바뀌어 페이지가 밀려도 그 옵션이 제자리에 있게 해요.
+  const anchor = useRef(null)
+  function rememberAnchor(e) {
+    const el = e.target.closest?.('button, input, select, label, textarea')
+    if (el) anchor.current = { el, top: el.getBoundingClientRect().top }
+  }
+
   // 고치는 동안 사이트 전체에 바로 미리 적용해요.
   useEffect(() => {
     app.setPreviewTheme(draft)
+    const a = anchor.current
+    if (!a) return
+    // 테마가 화면에 적용된 뒤(다음 프레임)에 위치를 맞춰요.
+    let id = requestAnimationFrame(() => {
+      id = requestAnimationFrame(() => {
+        if (anchor.current !== a || !a.el.isConnected) return
+        const diff = a.el.getBoundingClientRect().top - a.top
+        if (Math.abs(diff) > 1) (scrollRoot() || window).scrollBy(0, diff)
+        a.top = a.el.getBoundingClientRect().top
+      })
+    })
+    return () => cancelAnimationFrame(id)
   }, [draft])
   useEffect(() => () => app.setPreviewTheme(null), [])
 
@@ -204,7 +223,7 @@ function DesignTab() {
   const active = DESIGN_SECTIONS.find((s) => s.key === section)
 
   return (
-    <>
+    <div className="design-editor" onPointerDownCapture={rememberAnchor} onKeyDownCapture={rememberAnchor}>
       <div className="design-tabs" role="tablist">
         {sections.map((s) => (
           <button type="button" key={s.key} role="tab" aria-selected={section === s.key} className={section === s.key ? 'active' : ''} onClick={() => setSection(s.key)}>
@@ -290,7 +309,7 @@ function DesignTab() {
       )}
 
       <SaveBar dirty={dirty} busy={busy} onSave={save} onReset={() => setDraft(app.savedTheme)} />
-    </>
+    </div>
   )
 }
 

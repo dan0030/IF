@@ -967,8 +967,9 @@ form.search-field input:focus {
 
 /* ---------------- 본문 창 (One UI 인터넷 앱 모양) ---------------- */
 
-/* 본문 창을 끈 상태: 감싼 상자가 없는 것처럼 보이게 */
-.frame-off {
+/* 감싸기만 하는 상자(본문 창을 끈 상태, 디자인 편집): 상자가 없는 것처럼 보이게 */
+.frame-off,
+.design-editor {
   display: contents;
 }
 .page.framed {

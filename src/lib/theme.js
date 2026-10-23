@@ -170,7 +170,19 @@ export function applyTheme(theme, mode) {
   for (const [k, v] of Object.entries(vars)) root.style.setProperty(k, String(v))
 
   // 단색이 아니면 페이지를 #root 안에서 스크롤해요. 그래야 스크롤바 뒤(바깥 줄)에도 배경이 그대로 보여요.
-  root.classList.toggle('inner-scroll', theme.bgType && theme.bgType !== 'solid')
+  // 스크롤하는 곳(창 ↔ #root)이 바뀔 때는 보던 위치를 그대로 옮겨서 맨 위로 튀지 않게 해요.
+  const inner = !!theme.bgType && theme.bgType !== 'solid'
+  const wasInner = root.classList.contains('inner-scroll')
+  if (inner !== wasInner) {
+    const el = document.getElementById('root')
+    const y = wasInner ? el?.scrollTop || 0 : window.scrollY
+    root.classList.toggle('inner-scroll', inner)
+    if (inner) {
+      if (el) el.scrollTop = y
+    } else {
+      window.scrollTo(0, y)
+    }
+  }
   root.dataset.mode = mode
   root.dataset.card = theme.cardStyle
   root.dataset.header = theme.headerStyle
