@@ -12,11 +12,11 @@
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*", "/files/*"]
   },
-  // database_id가 없으면 첫 배포 때 D1 데이터베이스와 R2 버킷을 자동으로 새로 만들어요.
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "if-db"
+      "database_name": "if-db",
+      "database_id": "592d89e8-2ccb-409f-b16b-b76cf6c5ba00"
     }
   ],
   // 올린 사진·파일은 R2에 저장돼요. (글·설정은 D1)

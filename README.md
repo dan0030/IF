@@ -36,7 +36,7 @@ npm run deploy                         # 빌드 + 배포
 배포가 끝나면 `https://if.<내계정>.workers.dev`로 접속할 수 있어요.
 
 - 메뉴의 열쇠 아이콘이나 `/login`에서 로그인하면 글쓰기·관리·홈 편집이 열립니다.
-- D1 데이터베이스(`if-db`)와 R2 버킷(`if-files`)은 첫 배포 때 자동으로 만들어지고, 테이블은 첫 접속 때 자동으로 만들어져요.
+- D1 데이터베이스(`if-db`)와 R2 버킷(`if-files`)은 이미 만들어져 `wrangler.jsonc`에 연결돼 있고, 테이블은 첫 접속 때 자동으로 만들어져요.
 - 사이트 이름은 `wrangler.jsonc`의 `name`을 바꾸면 달라져요.
 - 내 도메인은 Cloudflare 대시보드 > Workers > 설정 > 도메인에서 연결해요.
 
