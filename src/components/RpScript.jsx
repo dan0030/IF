@@ -3,11 +3,12 @@ import { swapNames, useApp } from '../lib/store.jsx'
 import { uid } from '../lib/format.js'
 import { Sheet } from './ui.jsx'
 
-// 역극 대본: '대사'(캐릭터 두상 + 말풍선)와 '지문'(소설체 행동 묘사) 블록을 차례로 쌓아요.
+// 역극 대본: '대사'(캐릭터 두상 + 말풍선), '지문'(소설체 행동 묘사), '구분선'(장면 전환) 블록을 차례로 쌓아요.
 // 저장은 아래 모양의 HTML로 해서, 검색·백업·요약이 일반 글처럼 동작해요.
 //   <div class="rp-script">
 //     <div class="rp-say" data-char="키" data-ava="/files/…"><b class="rp-who">이름</b><div class="rp-text">대사<br>…</div></div>
 //     <div class="rp-act"><p>지문</p><p>…</p></div>
+//     <div class="rp-hr"><span>장면 전환 (선택)</span></div>
 //   </div>
 // 두상 이미지는 볼 때 페이지 설정의 최신 이미지로 다시 그려요. (data-ava는 예전 이미지 대신용)
 
@@ -26,8 +27,12 @@ function esc(s) {
 export function scriptToHtml(blocks, chars) {
   const map = Object.fromEntries((chars || []).map((c) => [c.key, c]))
   const body = blocks
-    .filter((b) => (b.text || '').trim())
+    .filter((b) => b.type === 'hr' || (b.text || '').trim())
     .map((b) => {
+      if (b.type === 'hr') {
+        const label = (b.text || '').trim()
+        return `<div class="rp-hr">${label ? `<span>${esc(label)}</span>` : ''}</div>`
+      }
       if (b.type === 'say') {
         const c = map[b.char] || {}
         const name = c.name || b.name || ''
@@ -60,6 +65,9 @@ export function parseScript(html) {
     .map((el) => {
       if (el.classList.contains('rp-say')) {
         return { id: uid('b'), type: 'say', char: el.dataset.char || '', name: textOf(el.querySelector('.rp-who')), ava: el.dataset.ava || '', text: textOf(el.querySelector('.rp-text')) }
+      }
+      if (el.classList.contains('rp-hr')) {
+        return { id: uid('b'), type: 'hr', text: textOf(el.querySelector('span')) }
       }
       if (el.classList.contains('rp-act')) {
         const ps = [...el.querySelectorAll('p')]
@@ -101,7 +109,9 @@ export function RpScriptView({ html, chars }) {
   return (
     <div className="rp-script-view">
       {blocks.map((b) =>
-        b.type === 'say' ? (
+        b.type === 'hr' ? (
+          <Divider key={b.id} text={swapNames(b.text || '', site)} />
+        ) : b.type === 'say' ? (
           <SayLine key={b.id} char={map[b.char] || { name: b.name, avatar: b.ava }} text={b.text} />
         ) : (
           <div key={b.id} className="rp-act-view">
@@ -111,6 +121,15 @@ export function RpScriptView({ html, chars }) {
           </div>
         ),
       )}
+    </div>
+  )
+}
+
+// 장면을 나누는 구분선. 글을 적으면 선 가운데에 보여요.
+function Divider({ text }) {
+  return (
+    <div className={`rp-hr ${text ? 'has-text' : ''}`} role="separator">
+      {text ? <span>{text}</span> : null}
     </div>
   )
 }
@@ -188,7 +207,22 @@ export function RpScriptEditor({ value, onChange, chars, cast, quote, onQuote })
 
       {blocks.map((b, i) => (
         <div key={b.id} className={`rp-block ${b.type}`}>
-          {b.type === 'say' ? (
+          {b.type === 'hr' ? (
+            <div className="rp-block-hr">
+              <span className="rp-block-label">
+                <i className="fa-solid fa-grip-lines" /> 구분선
+              </span>
+              <input
+                className="rp-hr-input"
+                value={b.text}
+                onChange={(e) => update(b.id, { text: e.target.value })}
+                placeholder="선 가운데에 넣을 글 (선택) · 예: 장면 전환, 다음 날 아침"
+                aria-label="구분선 글"
+                maxLength={60}
+                autoFocus={focusId === b.id}
+              />
+            </div>
+          ) : b.type === 'say' ? (
             <div className="rp-block-say" style={map[b.char]?.color ? { '--cc': map[b.char].color } : undefined}>
               <div className="rp-speaker-pick" role="radiogroup" aria-label="말하는 사람">
                 {speakers.map((c) => (
@@ -222,9 +256,11 @@ export function RpScriptEditor({ value, onChange, chars, cast, quote, onQuote })
                 <i className="fa-solid fa-star" />
               </button>
             )}
-            <button type="button" onClick={() => update(b.id, b.type === 'say' ? { type: 'act' } : { type: 'say', char: b.char || nextSpeaker(i) })} title={b.type === 'say' ? '지문으로 바꾸기' : '대사로 바꾸기'} aria-label="대사/지문 바꾸기">
-              <i className="fa-solid fa-right-left" />
-            </button>
+            {b.type !== 'hr' && (
+              <button type="button" onClick={() => update(b.id, b.type === 'say' ? { type: 'act' } : { type: 'say', char: b.char || nextSpeaker(i) })} title={b.type === 'say' ? '지문으로 바꾸기' : '대사로 바꾸기'} aria-label="대사/지문 바꾸기">
+                <i className="fa-solid fa-right-left" />
+              </button>
+            )}
             <button type="button" onClick={() => move(i, -1)} disabled={i === 0} aria-label="위로">
               <i className="fa-solid fa-arrow-up" />
             </button>
@@ -236,6 +272,9 @@ export function RpScriptEditor({ value, onChange, chars, cast, quote, onQuote })
             </button>
             <button type="button" onClick={() => insert(i + 1, { type: 'act' })} title="아래에 지문 넣기" aria-label="아래에 지문 넣기">
               <i className="fa-solid fa-feather" />
+            </button>
+            <button type="button" onClick={() => insert(i + 1, { type: 'hr' })} title="아래에 구분선 넣기" aria-label="아래에 구분선 넣기">
+              <i className="fa-solid fa-grip-lines" />
             </button>
             <button type="button" className="danger" onClick={() => remove(b.id)} aria-label="블록 지우기">
               <i className="fa-solid fa-trash" />
@@ -252,6 +291,9 @@ export function RpScriptEditor({ value, onChange, chars, cast, quote, onQuote })
         ))}
         <button type="button" className="rp-add-btn act" onClick={() => insert(blocks.length, { type: 'act' })}>
           <i className="fa-solid fa-feather" /> 지문
+        </button>
+        <button type="button" className="rp-add-btn act" onClick={() => insert(blocks.length, { type: 'hr' })}>
+          <i className="fa-solid fa-grip-lines" /> 구분선
         </button>
       </div>
 
@@ -282,6 +324,10 @@ function ImportSheet({ chars, onClose, onImport }) {
         if (last?.type === 'act' && !last.text.endsWith('\n\n')) last.text += '\n\n'
         continue
       }
+      if (/^([-*=_~─━·•]\s*){3,}$/.test(line)) {
+        out.push({ id: uid('b'), type: 'hr', text: '' })
+        continue
+      }
       const m = line.match(/^([^:：「」"]{1,20})\s*[:：]\s*(.+)$/) || line.match(/^([^「」]{1,20})\s*「(.+)」$/)
       const hit = m && names.find((n) => n.names.includes(m[1].trim()))
       if (hit) out.push({ id: uid('b'), type: 'say', char: hit.c.key, text: m[2].trim() })
@@ -294,6 +340,7 @@ function ImportSheet({ chars, onClose, onImport }) {
     return out.map((b) => ({ ...b, text: b.text.trim() }))
   }, [text, chars])
   const says = list.filter((b) => b.type === 'say').length
+  const hrs = list.filter((b) => b.type === 'hr').length
   return (
     <Sheet
       title="텍스트로 한 번에 넣기"
@@ -311,11 +358,11 @@ function ImportSheet({ chars, onClose, onImport }) {
       }
     >
       <p className="sheet-help">
-        <b>{chars.map((c) => c.name).join(', ')}</b> 이름으로 시작하는 줄(<code>이름: 대사</code> 또는 <code>이름「대사」</code>)은 대사로, 나머지는 지문으로 들어가요. 빈 줄은 지문의 문단을 나눠요.
+        <b>{chars.map((c) => c.name).join(', ')}</b> 이름으로 시작하는 줄(<code>이름: 대사</code> 또는 <code>이름「대사」</code>)은 대사로, 나머지는 지문으로 들어가요. 빈 줄은 지문의 문단을 나누고, <code>---</code>나 <code>* * *</code>만 있는 줄은 구분선이 돼요.
       </p>
       <textarea className="rp-import-text" rows={12} value={text} onChange={(e) => setText(e.target.value)} placeholder={`${chars[0]?.name || '미카즈키'}: 이런 곳에 사람이?\n달빛 아래 소녀는 고개를 들었다.\n${chars[1]?.name || '나나'}: …누구세요?`} />
       <p className="field-help">
-        {list.length ? `대사 ${says}개 · 지문 ${list.length - says}개로 나뉘어요.` : '붙여넣으면 몇 개로 나뉘는지 알려줘요.'}
+        {list.length ? `대사 ${says}개 · 지문 ${list.length - says - hrs}개${hrs ? ` · 구분선 ${hrs}개` : ''}로 나뉘어요.` : '붙여넣으면 몇 개로 나뉘는지 알려줘요.'}
       </p>
     </Sheet>
   )

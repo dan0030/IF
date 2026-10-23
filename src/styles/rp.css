@@ -397,6 +397,39 @@
 .rp-say-row.compact .rp-say-name {
   font-size: 0.72rem;
 }
+/* 구분선 (장면 전환) */
+.rp-hr {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 30px 8px;
+  color: var(--text-sub);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.rp-hr {
+  --_hr: color-mix(in srgb, var(--text) 22%, transparent);
+}
+.rp-hr::before,
+.rp-hr::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--_hr);
+}
+.rp-hr:not(.has-text):not(:has(span))::before {
+  background: linear-gradient(90deg, transparent, var(--_hr) 25%, var(--_hr) 75%, transparent);
+}
+.rp-hr:not(.has-text):not(:has(span))::after {
+  display: none;
+}
+.rp-hr span {
+  flex: none;
+  max-width: 70%;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
 /* 지문은 소설처럼 */
 .rp-act-view {
   margin: 18px 0;
@@ -500,6 +533,17 @@
 .rp-bubble-input {
   border-radius: 6px 18px 18px 18px !important;
   background: color-mix(in srgb, var(--cc) 12%, var(--surface)) !important;
+}
+.rp-block-hr {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rp-hr-input {
+  width: 100%;
+  text-align: center;
+  background: var(--surface) !important;
+  border-style: dashed !important;
 }
 .rp-act-input {
   background: var(--surface) !important;
