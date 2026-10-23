@@ -405,13 +405,47 @@
   -webkit-text-emphasis-position: over right;
   text-emphasis-position: over right;
 }
+/* 루비: 밑글자는 원래 너비·띄어쓰기 그대로 두고, 작은 글은 밑글자 가운데 위에 띄워요.
+   (루비가 밑글자보다 길어도 밑글자 사이가 벌어지지 않고, 짧아도 글자가 흩어지지 않게) */
+.rp-bubble ruby,
+.rp-act-view ruby,
+.rp-hr ruby,
+.rp-inline-preview ruby {
+  display: inline;
+  position: relative;
+}
 .rp-bubble ruby rt,
 .rp-act-view ruby rt,
 .rp-hr ruby rt,
 .rp-inline-preview ruby rt {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  margin-bottom: -0.1em;
   font-size: 0.55em;
   font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0;
+  text-align: center;
+  text-indent: 0;
+  white-space: nowrap;
   opacity: 0.85;
+  pointer-events: none;
+}
+.rp-bubble rp,
+.rp-act-view rp,
+.rp-hr rp,
+.rp-inline-preview rp {
+  display: none;
+}
+/* 루비가 있는 문단은 위 줄과 겹치지 않게 줄 간격을 조금 넓혀요. */
+.rp-bubble:has(ruby),
+.rp-inline-preview:has(ruby) {
+  line-height: 2.15;
+}
+.rp-act-view p:has(ruby) {
+  line-height: 2.2;
 }
 /* 구분선 (장면 전환) */
 .rp-hr {
