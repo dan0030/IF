@@ -11,6 +11,11 @@ import { Sheet } from './ui.jsx'
 //     <div class="rp-hr"><span>장면 전환 (선택)</span></div>
 //   </div>
 // 두상 이미지는 볼 때 페이지 설정의 최신 이미지로 다시 그려요. (data-ava는 예전 이미지 대신용)
+//
+// 대사·지문 안의 글자 꾸밈은 편집할 때 짧은 표시로 적고, 저장할 때 HTML 태그로 바꿔요.
+//   [b]굵게[/b] [i]기울임[/i] [u]밑줄[/u] [s]취소선[/s] [dot]방점[/dot] [color=#e5484d]글자색[/color]
+//   루비: [ruby=かんじ]漢字[/ruby] 또는 웹소설식 |漢字《かんじ》
+// 역극에서 자주 쓰는 *행동* 표기와 겹치지 않게 대괄호 표시를 써요.
 
 export function isScript(html) {
   return /class="rp-script"/.test(html || '')
@@ -24,6 +29,64 @@ function esc(s) {
     .replace(/"/g, '&quot;')
 }
 
+const INLINE_TAGS = { b: ['<b>', '</b>'], i: ['<i>', '</i>'], u: ['<u>', '</u>'], s: ['<s>', '</s>'], dot: ['<em class="rp-dot">', '</em>'] }
+
+// 꾸밈 표시가 들어간 글 → 안전한 HTML (글은 전부 이스케이프하고, 정해진 태그만 넣어요)
+export function inlineHtml(text) {
+  let h = esc(text)
+  h = h.replace(/[|｜]([^|｜《\n]{1,40})《([^》\n]{1,40})》/g, '<ruby>$1<rt>$2</rt></ruby>')
+  h = h.replace(/\[ruby=([^\]\n]{1,40})\]([\s\S]*?)\[\/ruby\]/g, '<ruby>$2<rt>$1</rt></ruby>')
+  // 안쪽부터 바뀌도록 더 이상 바뀌지 않을 때까지 되풀이해요. (겹쳐 꾸민 글)
+  for (let k = 0; k < 8; k++) {
+    const before = h
+    h = h.replace(/\[(b|i|u|s|dot)\]((?:(?!\[\1\])[\s\S])*?)\[\/\1\]/g, (_, t, inner) => INLINE_TAGS[t][0] + inner + INLINE_TAGS[t][1])
+    h = h.replace(/\[color=(#[0-9a-fA-F]{3,8})\]((?:(?!\[color=)[\s\S])*?)\[\/color\]/g, '<span style="color:$1">$2</span>')
+    if (h === before) break
+  }
+  return h
+}
+
+const MARKUP_RE = /\[(b|i|u|s|dot|color=#[0-9a-fA-F]{3,8}|ruby=[^\]]+)\]|[|｜][^|｜《\n]+《[^》\n]+》/
+
+// 저장된 HTML → 편집용 꾸밈 표시가 들어간 글
+function markupOf(el) {
+  if (!el) return ''
+  let out = ''
+  for (const node of el.childNodes) {
+    if (node.nodeType === 3) {
+      out += node.textContent
+      continue
+    }
+    if (node.nodeType !== 1) continue
+    const tag = node.tagName.toLowerCase()
+    const inner = () => markupOf(node)
+    if (tag === 'br') out += '\n'
+    else if (tag === 'b' || tag === 'strong') out += `[b]${inner()}[/b]`
+    else if (tag === 'em' && node.classList.contains('rp-dot')) out += `[dot]${inner()}[/dot]`
+    else if (tag === 'i' || tag === 'em') out += `[i]${inner()}[/i]`
+    else if (tag === 'u') out += `[u]${inner()}[/u]`
+    else if (tag === 's' || tag === 'del' || tag === 'strike') out += `[s]${inner()}[/s]`
+    else if (tag === 'ruby') {
+      const rt = [...node.querySelectorAll('rt')].map((r) => r.textContent).join('')
+      const base = [...node.childNodes].filter((c) => !(c.nodeType === 1 && /^(rt|rp)$/i.test(c.tagName))).map((c) => (c.nodeType === 1 ? markupOf(c) : c.textContent)).join('')
+      out += `[ruby=${rt}]${base}[/ruby]`
+    } else if (tag === 'span' && /^#[0-9a-f]{3,8}$/i.test(node.style.color ? toHexColor(node.style.color) : '')) out += `[color=${toHexColor(node.style.color)}]${inner()}[/color]`
+    else out += inner()
+  }
+  return out
+}
+
+function toHexColor(c) {
+  if (/^#/.test(c)) return c
+  const m = c.match(/\d+/g)
+  return m && m.length >= 3 ? `#${m.slice(0, 3).map((v) => Number(v).toString(16).padStart(2, '0')).join('')}` : ''
+}
+
+// 화면에 보일 HTML: 꾸밈을 태그로 바꾸고 이름 변환({{나}} 등)을 해요.
+function displayHtml(text, site) {
+  return swapNames(inlineHtml(text || '').replace(/\n/g, '<br>'), site)
+}
+
 export function scriptToHtml(blocks, chars) {
   const map = Object.fromEntries((chars || []).map((c) => [c.key, c]))
   const body = blocks
@@ -31,17 +94,17 @@ export function scriptToHtml(blocks, chars) {
     .map((b) => {
       if (b.type === 'hr') {
         const label = (b.text || '').trim()
-        return `<div class="rp-hr">${label ? `<span>${esc(label)}</span>` : ''}</div>`
+        return `<div class="rp-hr">${label ? `<span>${inlineHtml(label)}</span>` : ''}</div>`
       }
       if (b.type === 'say') {
         const c = map[b.char] || {}
         const name = c.name || b.name || ''
-        return `<div class="rp-say" data-char="${esc(b.char)}"${c.avatar ? ` data-ava="${esc(c.avatar)}"` : ''}><b class="rp-who">${esc(name)}</b><div class="rp-text">${esc(b.text.trim()).replace(/\n/g, '<br>')}</div></div>`
+        return `<div class="rp-say" data-char="${esc(b.char)}"${c.avatar ? ` data-ava="${esc(c.avatar)}"` : ''}><b class="rp-who">${esc(name)}</b><div class="rp-text">${inlineHtml(b.text.trim()).replace(/\n/g, '<br>')}</div></div>`
       }
       const paras = b.text
         .trim()
         .split(/\n{2,}/)
-        .map((p) => `<p>${esc(p.trim()).replace(/\n/g, '<br>')}</p>`)
+        .map((p) => `<p>${inlineHtml(p.trim()).replace(/\n/g, '<br>')}</p>`)
         .join('')
       return `<div class="rp-act">${paras}</div>`
     })
@@ -64,14 +127,14 @@ export function parseScript(html) {
   return [...root.children]
     .map((el) => {
       if (el.classList.contains('rp-say')) {
-        return { id: uid('b'), type: 'say', char: el.dataset.char || '', name: textOf(el.querySelector('.rp-who')), ava: el.dataset.ava || '', text: textOf(el.querySelector('.rp-text')) }
+        return { id: uid('b'), type: 'say', char: el.dataset.char || '', name: textOf(el.querySelector('.rp-who')), ava: el.dataset.ava || '', text: markupOf(el.querySelector('.rp-text')) }
       }
       if (el.classList.contains('rp-hr')) {
-        return { id: uid('b'), type: 'hr', text: textOf(el.querySelector('span')) }
+        return { id: uid('b'), type: 'hr', text: markupOf(el.querySelector('span')) }
       }
       if (el.classList.contains('rp-act')) {
         const ps = [...el.querySelectorAll('p')]
-        return { id: uid('b'), type: 'act', text: ps.length ? ps.map(textOf).join('\n\n') : textOf(el) }
+        return { id: uid('b'), type: 'act', text: ps.length ? ps.map(markupOf).join('\n\n') : markupOf(el) }
       }
       return null
     })
@@ -96,7 +159,7 @@ export function SayLine({ char, text, compact = false }) {
       <Avatar char={char} size={compact ? 34 : 46} />
       <div className="rp-say-body">
         <span className="rp-say-name">{char?.name}</span>
-        <div className="rp-bubble">{swapNames(text, site)}</div>
+        <div className="rp-bubble" dangerouslySetInnerHTML={{ __html: displayHtml(text, site) }} />
       </div>
     </div>
   )
@@ -110,13 +173,13 @@ export function RpScriptView({ html, chars }) {
     <div className="rp-script-view">
       {blocks.map((b) =>
         b.type === 'hr' ? (
-          <Divider key={b.id} text={swapNames(b.text || '', site)} />
+          <Divider key={b.id} html={b.text ? displayHtml(b.text, site) : ''} />
         ) : b.type === 'say' ? (
           <SayLine key={b.id} char={map[b.char] || { name: b.name, avatar: b.ava }} text={b.text} />
         ) : (
           <div key={b.id} className="rp-act-view">
             {b.text.split(/\n{2,}/).map((p, i) => (
-              <p key={i}>{swapNames(p, site)}</p>
+              <p key={i} dangerouslySetInnerHTML={{ __html: displayHtml(p, site) }} />
             ))}
           </div>
         ),
@@ -126,17 +189,17 @@ export function RpScriptView({ html, chars }) {
 }
 
 // 장면을 나누는 구분선. 글을 적으면 선 가운데에 보여요.
-function Divider({ text }) {
+function Divider({ html }) {
   return (
-    <div className={`rp-hr ${text ? 'has-text' : ''}`} role="separator">
-      {text ? <span>{text}</span> : null}
+    <div className={`rp-hr ${html ? 'has-text' : ''}`} role="separator">
+      {html ? <span dangerouslySetInnerHTML={{ __html: html }} /> : null}
     </div>
   )
 }
 
 /* ---------------- 편집 ---------------- */
 
-function AutoText({ value, onChange, placeholder, className, autoFocus }) {
+function AutoText({ value, onChange, placeholder, className, autoFocus, inputRef, onFocus, onKeyDown }) {
   const ref = useRef(null)
   useEffect(() => {
     const el = ref.current
@@ -144,7 +207,139 @@ function AutoText({ value, onChange, placeholder, className, autoFocus }) {
     el.style.height = 'auto'
     el.style.height = `${el.scrollHeight + 2}px`
   }, [value])
-  return <textarea ref={ref} rows={1} className={className} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} autoFocus={autoFocus} />
+  return (
+    <textarea
+      ref={(el) => {
+        ref.current = el
+        if (inputRef) inputRef(el)
+      }}
+      rows={1}
+      className={className}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onFocus={onFocus}
+      onKeyDown={onKeyDown}
+      placeholder={placeholder}
+      autoFocus={autoFocus}
+    />
+  )
+}
+
+/* ---------------- 글자 꾸밈 도구 ---------------- */
+
+const FORMAT_COLORS = ['#e5484d', '#f76b15', '#d6a000', '#30a46c', '#0090ff', '#8e4ec6', '#e93d82', '#8b8d98']
+
+// 선택한 글을 꾸밈 표시로 감싸요. 꾸밈이 끝나면 감싼 글이 다시 선택된 채로 둬요.
+function wrapSelection(el, open, close, setText) {
+  if (!el) return
+  const { selectionStart: s, selectionEnd: e, value } = el
+  setText(value.slice(0, s) + open + value.slice(s, e) + close + value.slice(e))
+  requestAnimationFrame(() => {
+    el.focus()
+    el.setSelectionRange(s + open.length, e + open.length)
+  })
+}
+
+function clearSelection(el, setText) {
+  if (!el) return
+  const { selectionStart: s, selectionEnd: e, value } = el
+  const strip = (t) =>
+    t
+      .replace(/\[\/?(b|i|u|s|dot)\]|\[color=[^\]]*\]|\[\/color\]|\[\/ruby\]/g, '')
+      .replace(/\[ruby=[^\]]*\]/g, '')
+      .replace(/[|｜]([^|｜《\n]+)《[^》\n]+》/g, '$1')
+  // 아무것도 선택하지 않았으면 블록 전체의 꾸밈을 지워요.
+  if (s === e) setText(strip(value))
+  else setText(value.slice(0, s) + strip(value.slice(s, e)) + value.slice(e))
+  requestAnimationFrame(() => el.focus())
+}
+
+function FormatBar({ el, setText }) {
+  const [colorsOpen, setColorsOpen] = useState(false)
+  const customRef = useRef(null)
+  const keep = (e) => e.preventDefault() // 버튼을 눌러도 글칸의 선택이 풀리지 않게
+  const wrap = (open, close) => wrapSelection(el, open, close, setText)
+  function ruby() {
+    if (!el) return
+    const picked = el.value.slice(el.selectionStart, el.selectionEnd)
+    const base = picked || window.prompt('루비를 달 글자를 적어주세요', '')
+    if (!base) return
+    const rt = window.prompt(`'${base}' 위에 작게 달 글(루비)을 적어주세요`, '')
+    if (!rt) return
+    const { selectionStart: s, selectionEnd: e, value } = el
+    const piece = `[ruby=${rt.replace(/[\]\n]/g, '')}]${base}[/ruby]`
+    setText(value.slice(0, s) + piece + value.slice(e))
+    requestAnimationFrame(() => {
+      el.focus()
+      el.setSelectionRange(s + piece.length, s + piece.length)
+    })
+  }
+  // 직접 고르는 색은 색 창을 닫을 때 한 번만 넣어요.
+  useEffect(() => {
+    const input = customRef.current
+    if (!input) return
+    const onPick = () => {
+      wrap(`[color=${input.value}]`, '[/color]')
+      setColorsOpen(false)
+    }
+    input.addEventListener('change', onPick)
+    return () => input.removeEventListener('change', onPick)
+  })
+  const tools = [
+    ['b', 'fa-solid fa-bold', '굵게 (Ctrl+B)'],
+    ['i', 'fa-solid fa-italic', '기울임 (Ctrl+I)'],
+    ['u', 'fa-solid fa-underline', '밑줄 (Ctrl+U)'],
+    ['s', 'fa-solid fa-strikethrough', '취소선'],
+    ['dot', 'fa-solid fa-ellipsis', '방점 (글자 위 점)'],
+  ]
+  return (
+    <div className="rp-format-bar" role="toolbar" aria-label="글자 꾸미기" onMouseDown={keep}>
+      {tools.map(([t, icon, label]) => (
+        <button type="button" key={t} onClick={() => wrap(`[${t}]`, `[/${t}]`)} title={label} aria-label={label}>
+          <i className={icon} />
+        </button>
+      ))}
+      <button type="button" onClick={() => setColorsOpen((v) => !v)} title="글자색" aria-label="글자색" aria-expanded={colorsOpen} className={colorsOpen ? 'active' : ''}>
+        <i className="fa-solid fa-palette" />
+      </button>
+      <button type="button" onClick={ruby} title="루비 (글자 위 작은 글) · |漢字《かんじ》로 적어도 돼요" aria-label="루비" className="rp-ruby-btn">
+        <ruby>
+          字<rt>じ</rt>
+        </ruby>
+      </button>
+      <button type="button" onClick={() => clearSelection(el, setText)} title="꾸밈 지우기 (선택한 곳, 없으면 블록 전체)" aria-label="꾸밈 지우기">
+        <i className="fa-solid fa-text-slash" />
+      </button>
+      {colorsOpen && (
+        <div className="rp-format-colors">
+          {FORMAT_COLORS.map((c) => (
+            <button
+              type="button"
+              key={c}
+              style={{ background: c }}
+              onClick={() => {
+                wrap(`[color=${c}]`, '[/color]')
+                setColorsOpen(false)
+              }}
+              aria-label={`글자색 ${c}`}
+              title={c}
+            />
+          ))}
+          <label className="rp-format-custom" title="직접 고르기">
+            <i className="fa-solid fa-eye-dropper" />
+            <input ref={customRef} type="color" defaultValue="#e5484d" aria-label="글자색 직접 고르기" />
+          </label>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// 꾸밈이 들어간 블록은 글칸 아래에 실제로 보일 모습을 작게 보여줘요.
+function InlinePreview({ text }) {
+  const { site } = useApp()
+  if (!MARKUP_RE.test(text || '')) return null
+  return <div className="rp-inline-preview" aria-label="미리보기" dangerouslySetInnerHTML={{ __html: displayHtml(text, site) }} />
 }
 
 export function RpScriptEditor({ value, onChange, chars, cast, quote, onQuote }) {
@@ -153,7 +348,9 @@ export function RpScriptEditor({ value, onChange, chars, cast, quote, onQuote })
     return parsed.length ? parsed : []
   })
   const [focusId, setFocusId] = useState(null)
+  const [activeId, setActiveId] = useState(null) // 꾸밈 도구를 보여줄(마지막으로 누른) 블록
   const [importing, setImporting] = useState(false)
+  const inputs = useRef({})
   const speakers = (cast?.length ? chars.filter((c) => cast.includes(c.key)) : chars) || []
   const map = Object.fromEntries(chars.map((c) => [c.key, c]))
 
@@ -183,6 +380,21 @@ export function RpScriptEditor({ value, onChange, chars, cast, quote, onQuote })
     setBlocks((bs) => [...bs.slice(0, at), b, ...bs.slice(at)])
     setFocusId(b.id)
   }
+
+  // 글칸 공통: 꾸밈 도구·단축키(Ctrl+B/I/U)·미리보기
+  const textProps = (b) => ({
+    inputRef: (el) => (inputs.current[b.id] = el),
+    onFocus: () => setActiveId(b.id),
+    onKeyDown: (e) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return
+      const t = { b: 'b', i: 'i', u: 'u' }[e.key.toLowerCase()]
+      if (!t) return
+      e.preventDefault()
+      wrapSelection(e.currentTarget, `[${t}]`, `[/${t}]`, (text) => update(b.id, { text }))
+    },
+  })
+  const formatting = (b) =>
+    activeId === b.id ? <FormatBar el={inputs.current[b.id]} setText={(text) => update(b.id, { text })} /> : null
 
   // 다음 대사는 직전에 말하지 않은 사람으로 (두 사람이 번갈아 말하는 경우가 많아서)
   function nextSpeaker(at) {
@@ -233,7 +445,9 @@ export function RpScriptEditor({ value, onChange, chars, cast, quote, onQuote })
               </div>
               <div className="rp-block-main">
                 <span className="rp-block-name">{map[b.char]?.name || b.name || '말하는 사람을 골라주세요'}</span>
-                <AutoText className="rp-bubble-input" value={b.text} onChange={(t) => update(b.id, { text: t })} placeholder="대사" autoFocus={focusId === b.id} />
+                {formatting(b)}
+                <AutoText className="rp-bubble-input" value={b.text} onChange={(t) => update(b.id, { text: t })} placeholder="대사" autoFocus={focusId === b.id} {...textProps(b)} />
+                <InlinePreview text={b.text} />
               </div>
             </div>
           ) : (
@@ -241,7 +455,9 @@ export function RpScriptEditor({ value, onChange, chars, cast, quote, onQuote })
               <span className="rp-block-label">
                 <i className="fa-solid fa-feather" /> 지문
               </span>
-              <AutoText className="rp-act-input" value={b.text} onChange={(t) => update(b.id, { text: t })} placeholder="행동 묘사 · 서술 (빈 줄로 문단 나누기)" autoFocus={focusId === b.id} />
+              {formatting(b)}
+              <AutoText className="rp-act-input" value={b.text} onChange={(t) => update(b.id, { text: t })} placeholder="행동 묘사 · 서술 (빈 줄로 문단 나누기)" autoFocus={focusId === b.id} {...textProps(b)} />
+              <InlinePreview text={b.text} />
             </div>
           )}
           <div className="rp-block-tools">

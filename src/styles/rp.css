@@ -397,6 +397,22 @@
 .rp-say-row.compact .rp-say-name {
   font-size: 0.72rem;
 }
+/* 대사·지문 글자 꾸밈 */
+.rp-dot {
+  font-style: normal;
+  -webkit-text-emphasis: filled dot;
+  text-emphasis: filled dot;
+  -webkit-text-emphasis-position: over right;
+  text-emphasis-position: over right;
+}
+.rp-bubble ruby rt,
+.rp-act-view ruby rt,
+.rp-hr ruby rt,
+.rp-inline-preview ruby rt {
+  font-size: 0.55em;
+  font-weight: 500;
+  opacity: 0.85;
+}
 /* 구분선 (장면 전환) */
 .rp-hr {
   display: flex;
@@ -544,6 +560,93 @@
   text-align: center;
   background: var(--surface) !important;
   border-style: dashed !important;
+}
+/* 꾸밈 도구 (누른 글칸 위에 나와요) */
+.rp-format-bar {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  width: fit-content;
+  max-width: 100%;
+}
+.rp-format-bar > button {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 0.8rem;
+}
+.rp-format-bar > button:hover,
+.rp-format-bar > button.active {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.rp-ruby-btn ruby {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.rp-ruby-btn rt {
+  font-size: 0.5em;
+}
+.rp-format-colors {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 5;
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.rp-format-colors button,
+.rp-format-custom {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line);
+  cursor: pointer;
+}
+.rp-format-custom {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  font-size: 0.7rem;
+  color: var(--text-sub);
+  background: conic-gradient(#e5484d, #d6a000, #30a46c, #0090ff, #8e4ec6, #e5484d);
+}
+.rp-format-custom i {
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+.rp-format-custom input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.rp-inline-preview {
+  padding: 8px 12px;
+  border-left: 3px solid var(--line);
+  border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--surface) 60%, transparent);
+  font-size: 0.88rem;
+  line-height: 1.9;
+  color: var(--text);
+  overflow-wrap: anywhere;
 }
 .rp-act-input {
   background: var(--surface) !important;
