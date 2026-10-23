@@ -411,8 +411,11 @@
 .rp-act-view ruby,
 .rp-hr ruby,
 .rp-inline-preview ruby {
-  display: inline;
+  /* 한 덩어리로 다뤄서, 문장처럼 긴 밑글자가 줄바꿈돼도 작은 글이 그 덩어리 가운데 위에 오게 해요. */
+  display: inline-block;
   position: relative;
+  max-width: 100%;
+  text-indent: 0;
 }
 .rp-bubble ruby rt,
 .rp-act-view ruby rt,
@@ -429,7 +432,12 @@
   letter-spacing: 0;
   text-align: center;
   text-indent: 0;
-  white-space: nowrap;
+  /* 짧은 밑글자에는 조금 길게 넘쳐도 한 줄로, 그보다 길면 밑글자(문장) 너비 안에서 줄바꿈해요. */
+  width: max-content;
+  max-width: max(100%, 14em);
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
   opacity: 0.85;
   pointer-events: none;
 }
@@ -443,6 +451,14 @@
 .rp-bubble:has(ruby),
 .rp-inline-preview:has(ruby) {
   line-height: 2.15;
+}
+.rp-bubble:has(ruby) {
+  padding-top: 15px;
+}
+/* 목록 카드의 작은 말풍선도 작은 글이 말풍선 밖으로 나가지 않게 */
+.rp-say-row.compact .rp-bubble:has(ruby) {
+  padding-top: 13px;
+  line-height: 2.1;
 }
 .rp-act-view p:has(ruby) {
   line-height: 2.2;
