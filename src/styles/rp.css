@@ -66,13 +66,26 @@
 }
 
 /* 세계선 탭 */
+/* 세계선 탭 + 정렬 버튼 한 줄 */
+.rp-listbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 14px;
+}
+.rp-listbar > .segmented {
+  flex: none;
+}
 .rp-worlds {
   display: flex;
   gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
   padding: 2px 2px 4px;
-  margin-bottom: 14px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 .rp-worlds::-webkit-scrollbar {
   display: none;
@@ -138,15 +151,27 @@
 
 /* 역극 카드 */
 /* 카드는 높이 제한 없이 벽돌처럼 쌓여요 */
+/* 카드 목록: 정한 개수만큼 한 줄에 놓고, 왼쪽에서 오른쪽으로 순서대로 읽혀요. (역극 설정 › 목록) */
 .rp-grid {
-  columns: 3 260px;
-  column-gap: 12px;
+  --rp-cols: 3;
+  display: grid;
+  grid-template-columns: repeat(var(--rp-cols), minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
   margin-bottom: 18px;
+}
+@media (max-width: 900px) {
+  .rp-grid {
+    grid-template-columns: repeat(min(var(--rp-cols), 2), minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .rp-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .rp-card {
   position: relative;
-  break-inside: avoid;
-  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
   min-width: 0;

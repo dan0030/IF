@@ -42,6 +42,15 @@ export function worldsOf(config) {
   return list.filter((w) => w && w.key)
 }
 
+// 목록 설정 (역극 설정 › 목록). 한 줄 카드 수 · 한 페이지 카드 수 · 기본 정렬(오래된 순)
+const PER_PAGE_OPTIONS = [6, 9, 12, 15, 18, 24, 30, 36, 48, 60]
+export function listOf(config) {
+  const cols = Math.min(6, Math.max(1, Number(config?.columns) || 3))
+  const perPage = config?.perPage === 'all' ? 'all' : PER_PAGE_OPTIONS.includes(Number(config?.perPage)) ? Number(config.perPage) : 24
+  const sort = config?.sort === 'recent' ? 'recent' : 'oldest'
+  return { cols, perPage, sort }
+}
+
 // 카테고리 config를 불러오는 작은 훅 (글쓰기 화면에서도 써요)
 export function useCategoryConfig(categoryId) {
   const [config, setConfig] = useState(null)
@@ -70,6 +79,10 @@ export default function RpPage({ category, search }) {
   const q = sp.get('q') || ''
   const page = Number(sp.get('page')) || 1
   const [config, setConfig] = useCategoryConfig(category.id)
+  const list = listOf(config)
+  // 방문자가 정렬을 바꾸면 주소에 남겨요. (없으면 역극 설정의 기본 정렬)
+  const sortParam = sp.get('sort')
+  const sort = sortParam === 'recent' || sortParam === 'oldest' ? sortParam : list.sort
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
   const [query, setQuery] = useState(q)
@@ -87,10 +100,11 @@ export default function RpPage({ category, search }) {
   }, [category.name, app.site.title])
 
   useEffect(() => {
+    if (!config) return // 설정(한 페이지 카드 수·정렬)을 읽은 뒤에 불러와요
     let alive = true
     setData(null)
     setError(null)
-    const params = { category: category.slug, page, limit: 24, worldCounts: 1, pinned: 1 }
+    const params = { category: category.slug, page, limit: list.perPage, sort, worldCounts: 1, pinned: 1 }
     if (world) params.world = world
     if (tag) params.tag = tag
     if (q) {
@@ -104,7 +118,7 @@ export default function RpPage({ category, search }) {
     return () => {
       alive = false
     }
-  }, [category.slug, world, tag, q, page])
+  }, [category.slug, world, tag, q, page, sort, list.perPage, !!config])
 
   // 주소창에 상태를 남겨서 뒤로 가기·공유가 자연스럽게
   function go(patch) {
@@ -156,6 +170,7 @@ export default function RpPage({ category, search }) {
         )}
       </div>
 
+      <div className="rp-listbar">
       <div className="rp-worlds" role="tablist" aria-label="세계선">
         <button type="button" role="tab" aria-selected={!world} className={!world ? 'active' : ''} onClick={() => go({ w: '' })}>
           전체 <small>{totalAll || ''}</small>
@@ -174,6 +189,16 @@ export default function RpPage({ category, search }) {
             {w.name} <small>{counts[w.key] || ''}</small>
           </button>
         ))}
+      </div>
+      <Segmented
+        size="small"
+        value={sort}
+        onChange={(v) => go({ sort: v === list.sort ? '' : v })}
+        options={[
+          { value: 'oldest', label: '오래된 순' },
+          { value: 'recent', label: '최신순' },
+        ]}
+      />
       </div>
 
       {current?.desc && (
@@ -211,7 +236,7 @@ export default function RpPage({ category, search }) {
           {q || tag ? '다른 검색어나 세계선으로 찾아보세요.' : app.admin ? "오른쪽 위 '새 역극'으로 첫 로그를 정리해보세요." : null}
         </Empty>
       ) : (
-        <div className="rp-grid">
+        <div className="rp-grid" style={{ '--rp-cols': list.cols }}>
           {data.items.map((p) => (
             <RpCard key={p.id} post={p} world={worldMap[p.rpWorld]} charMap={charMap} query={q} onTag={(t) => go({ tag: t })} />
           ))}
@@ -221,7 +246,7 @@ export default function RpPage({ category, search }) {
 
       {editing && (
         <RpConfigEditor
-          initial={{ intro: config?.intro || '', worlds: worldsOf(config), characters: charsOf(config, app.site) }}
+          initial={{ intro: config?.intro || '', worlds: worldsOf(config), characters: charsOf(config, app.site), columns: String(list.cols), perPage: String(list.perPage), sort: list.sort }}
           onClose={() => setEditing(false)}
           onSave={async (next) => {
             const merged = { ...(config || {}), ...next }
@@ -351,6 +376,29 @@ function RpConfigEditor({ initial, onClose, onSave }) {
       itemLabel: '세계선',
       itemFields: WORLD_FIELDS,
     },
+    { type: 'heading', label: '목록', help: '역극 카드 목록을 어떻게 보여줄지 정해요. 휴대폰처럼 좁은 화면에서는 한 줄 카드 수가 저절로 줄어요.' },
+    {
+      key: 'columns',
+      label: '한 줄에 들어갈 카드 수',
+      type: 'segmented',
+      options: ['1', '2', '3', '4', '5', '6'].map((n) => ({ value: n, label: `${n}개` })),
+    },
+    {
+      key: 'perPage',
+      label: '한 페이지에 보일 최대 카드 수',
+      type: 'select',
+      options: [...PER_PAGE_OPTIONS.map((n) => ({ value: String(n), label: `${n}개` })), { value: 'all', label: '모두 (페이지를 나누지 않아요)' }],
+    },
+    {
+      key: 'sort',
+      label: '기본 정렬',
+      type: 'segmented',
+      options: [
+        { value: 'oldest', label: '오래된 순 (먼저 쓴 역극부터)' },
+        { value: 'recent', label: '최신순' },
+      ],
+      help: '방문자도 목록 위의 버튼으로 오래된 순·최신순을 바꿔 볼 수 있어요. 고정한 역극은 항상 맨 앞에 와요.',
+    },
   ]
   async function save() {
     setBusy(true)
@@ -362,7 +410,14 @@ function RpConfigEditor({ initial, onClose, onSave }) {
       const characters = (draft.characters || [])
         .filter((c) => (c.name || '').trim())
         .map((c) => ({ ...c, name: c.name.trim(), side: c.side || 'left', key: c.key || uid('c') }))
-      await onSave({ intro: draft.intro || '', worlds, characters })
+      await onSave({
+        intro: draft.intro || '',
+        worlds,
+        characters,
+        columns: Number(draft.columns) || 3,
+        perPage: draft.perPage === 'all' ? 'all' : Number(draft.perPage) || 24,
+        sort: draft.sort === 'recent' ? 'recent' : 'oldest',
+      })
     } catch (e) {
       window.alert(e.message)
     } finally {

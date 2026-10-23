@@ -645,7 +645,8 @@ async function listPosts(db, admin, params) {
   const limit = params.get('limit') === 'all' ? 1000 : Math.min(Math.max(Number(params.get('limit')) || 12, 1), 60)
   const page = Math.max(Number(params.get('page')) || 1, 1)
   const sort = params.get('sort') || 'recent'
-  const pinnedFirst = params.get('pinned') !== '0' && sort === 'recent'
+  // 고정 글은 최신순에서 늘 맨 앞에. 오래된 순이어도 pinned=1을 주면 맨 앞에 둬요. (역극 목록)
+  const pinnedFirst = params.get('pinned') === '1' || (params.get('pinned') !== '0' && sort === 'recent')
   let order = 'p.published_at DESC, p.id DESC'
   if (sort === 'oldest') order = 'p.published_at ASC, p.id ASC'
   if (sort === 'views') order = 'p.views DESC, p.published_at DESC'
