@@ -430,6 +430,28 @@ function HomeEditor({ draft, setDraft, startTarget = 'pc', onCancel, onSave }) {
     setEditingWidget({ pageIdx, widgetIdx: layout.pages[pageIdx].widgets.length })
   }
 
+  // 위젯 하나를 그대로 복제해서 바로 뒤에 놓아요.
+  function duplicateWidget(pageIdx, widgetIdx) {
+    update((d) => {
+      const copy = JSON.parse(JSON.stringify(d.pages[pageIdx].widgets[widgetIdx]))
+      copy.id = uid('w')
+      d.pages[pageIdx].widgets.splice(widgetIdx + 1, 0, copy)
+    })
+  }
+
+  // 반대쪽 홈 화면(PC ↔ 모바일)에 있는 위젯을 복사해 와요. 원래 위젯은 그대로 남아요.
+  const otherTarget = target === 'mobile' ? 'pc' : 'mobile'
+  const otherLayout = target === 'mobile' ? draft : draft.mobile
+  const [imported, setImported] = useState([]) // 이번에 위젯 추가 창에서 가져온 위젯 id
+  function importWidget(pageIdx, w) {
+    update((d) => d.pages[pageIdx].widgets.push({ ...JSON.parse(JSON.stringify(w)), id: uid('w') }))
+    setImported((list) => [...list, w.id])
+  }
+  function openPicker(pageIdx) {
+    setImported([])
+    setPicker(pageIdx)
+  }
+
   const current = layout && editingWidget && layout.pages[editingWidget.pageIdx]?.widgets[editingWidget.widgetIdx]
 
   return (
@@ -636,6 +658,9 @@ function HomeEditor({ draft, setDraft, startTarget = 'pc', onCancel, onSave }) {
                       <button type="button" onClick={() => setEditingWidget({ pageIdx: pi, widgetIdx: wi })} aria-label="설정">
                         <i className="fa-solid fa-sliders" />
                       </button>
+                      <button type="button" onClick={() => duplicateWidget(pi, wi)} aria-label="복제" title="복제 (바로 뒤에 똑같은 위젯을 하나 더 만들어요)">
+                        <i className="fa-regular fa-clone" />
+                      </button>
                       <button type="button" className="danger" onClick={() => update((d) => d.pages[pi].widgets.splice(wi, 1))} aria-label="삭제">
                         <i className="fa-solid fa-trash" />
                       </button>
@@ -644,7 +669,7 @@ function HomeEditor({ draft, setDraft, startTarget = 'pc', onCancel, onSave }) {
                 </div>
               )
             })}
-            <button type="button" className="add-widget size-L" onClick={() => setPicker(pi)}>
+            <button type="button" className="add-widget size-L" onClick={() => openPicker(pi)}>
               <i className="fa-solid fa-plus" /> 위젯 추가
             </button>
           </div>
@@ -673,6 +698,47 @@ function HomeEditor({ draft, setDraft, startTarget = 'pc', onCancel, onSave }) {
               </button>
             ))}
           </div>
+          {otherLayout?.pages?.some((p) => p.widgets?.length) && (
+            <div className="widget-import">
+              <h3 className="fields-heading">
+                {otherTarget === 'pc' ? 'PC' : '모바일'} 홈 화면에서 가져오기
+                <small>
+                  {otherTarget === 'pc' ? 'PC' : '모바일'} 홈 화면에 만들어둔 위젯을 설정 그대로 복사해 {picker + 1}페이지 끝에 넣어요. 원래 위젯은 그대로 남아요.
+                </small>
+              </h3>
+              {otherLayout.pages.map((p, opi) =>
+                p.widgets?.length ? (
+                  <div className="widget-import-page" key={p.id || opi}>
+                    <span className="section-label">{opi + 1}페이지</span>
+                    <div className="widget-picker">
+                      {p.widgets.map((w) => {
+                        const def = WIDGETS[w.type]
+                        if (!def) return null
+                        const count = imported.filter((id) => id === w.id).length
+                        return (
+                          <button type="button" key={w.id} onClick={() => importWidget(picker, w)} className={count ? 'is-imported' : ''}>
+                            <span className="widget-picker-icon">
+                              <i className={def.icon} />
+                            </span>
+                            <span className="widget-picker-text">
+                              <span>{def.label}</span>
+                              {w.config?.title && w.config.title !== def.defaults?.title && <small>{w.config.title}</small>}
+                            </span>
+                            {count > 0 && (
+                              <span className="widget-import-badge" aria-label={`${count}개 가져옴`}>
+                                <i className="fa-solid fa-check" />
+                                {count > 1 ? ` ${count}` : ''}
+                              </span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ) : null,
+              )}
+            </div>
+          )}
         </Sheet>
       )}
 

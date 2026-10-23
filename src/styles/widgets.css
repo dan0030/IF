@@ -1628,6 +1628,40 @@ button.cal-day.today {
 .widget-picker button:hover {
   border-color: var(--accent);
 }
+/* 다른 홈 화면(PC ↔ 모바일)에서 가져오기 */
+.widget-import {
+  margin-top: 22px;
+}
+.widget-import-page {
+  margin-top: 12px;
+}
+.widget-import-page .section-label {
+  display: block;
+  margin-bottom: 6px;
+}
+.widget-picker-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.widget-picker-text small {
+  overflow: hidden;
+  color: var(--text-sub);
+  font-weight: 500;
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.widget-picker button.is-imported {
+  border-color: var(--accent);
+}
+.widget-import-badge {
+  margin-left: auto;
+  flex: none;
+  color: var(--accent);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
 .widget-picker-icon {
   width: 34px;
   height: 34px;
