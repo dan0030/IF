@@ -1,6 +1,7 @@
 // 글자가 배경에 묻혀 안 보이지 않게 색 대비를 계산해요.
-// 대비가 이 값보다 낮으면(거의 안 보이면) 자동으로 고쳐요. 기본 테마들의 디자인은 그대로 두는 정도예요.
-export const MIN_CONTRAST = 2
+// 대비는 사람 눈에 실제로 보이는 정도에 가까운 APCA 방식(Lc, 0~106)으로 재요.
+// 이 값보다 낮으면 자동으로 고쳐요. 45는 버튼처럼 굵고 짧은 글자가 읽히는 최소 기준이에요.
+export const MIN_CONTRAST = 45
 
 const DARK = '#1a1a1a'
 const LIGHT = '#ffffff'
@@ -48,20 +49,27 @@ function solid(c, under) {
   return { r: p.r * p.a + u.r * (1 - p.a), g: p.g * p.a + u.g * (1 - p.a), b: p.b * p.a + u.b * (1 - p.a), a: 1 }
 }
 
+// APCA(0.0.98G) 화면 밝기
 function luminance({ r, g, b }) {
-  const f = (v) => {
-    v /= 255
-    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+  const f = (v) => (v / 255) ** 2.4
+  const y = 0.2126729 * f(r) + 0.7151522 * f(g) + 0.072175 * f(b)
+  return y < 0.022 ? y + (0.022 - y) ** 1.414 : y
+}
+
+// 글자(text)를 바탕(bg) 위에 놓았을 때의 APCA 대비 크기 |Lc|. 밝은 바탕·어두운 바탕 모두 양수로 돌려줘요.
+function ratio(text, bg) {
+  const yt = luminance(text)
+  const yb = luminance(bg)
+  if (Math.abs(yb - yt) < 0.0005) return 0
+  if (yb > yt) {
+    const s = (yb ** 0.56 - yt ** 0.57) * 1.14
+    return s < 0.1 ? 0 : (s - 0.027) * 100
   }
-  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+  const s = (yb ** 0.65 - yt ** 0.62) * 1.14
+  return s > -0.1 ? 0 : -(s + 0.027) * 100
 }
 
-function ratio(a, b) {
-  const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p)
-  return (x + 0.05) / (y + 0.05)
-}
-
-// 두 색의 대비 (1 ~ 21). 해석할 수 없으면 null.
+// 두 색의 대비 (APCA |Lc|, 0 ~ 106). 해석할 수 없으면 null.
 export function contrast(fg, bg, under) {
   const b = solid(bg, under)
   const f = b && solid(fg, b)
@@ -86,7 +94,7 @@ export function legibleOn(color, bg, toward, under) {
   const b = solid(bg, under)
   const c = b && solid(color, b)
   if (!c || ratio(c, b) >= MIN_CONTRAST) return color
-  const t = solid(toward, b) || parseHex(luminance(b) > 0.4 ? DARK : LIGHT)
+  const t = solid(toward, b) || parseHex(ratio(parseHex(DARK), b) >= ratio(parseHex(LIGHT), b) ? DARK : LIGHT)
   for (let k = 0.1; k <= 1.001; k += 0.1) {
     const m = { r: c.r + (t.r - c.r) * k, g: c.g + (t.g - c.g) * k, b: c.b + (t.b - c.b) * k }
     if (ratio(m, b) >= MIN_CONTRAST) return toHex(m)
