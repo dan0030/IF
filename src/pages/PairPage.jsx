@@ -472,6 +472,7 @@ const CHAR_FIELDS = [
   {
     key: 'profile',
     label: '프로필 항목',
+    help: '항목 이름·순서·개수는 두 캐릭터가 함께 써요. 한쪽에서 추가·삭제·이름 변경하면 다른 쪽도 똑같이 바뀌고, 내용만 캐릭터마다 따로 적어요.',
     type: 'list',
     itemLabel: '항목',
     itemFields: [
@@ -483,6 +484,7 @@ const CHAR_FIELDS = [
   {
     key: 'status',
     label: '스테이터스 항목',
+    help: '스탯 이름·순서·개수는 두 캐릭터가 함께 써요. 값·최대값·등급은 캐릭터마다 따로 정해요.',
     type: 'list',
     itemLabel: '스탯',
     itemFields: [
@@ -496,11 +498,52 @@ const CHAR_FIELDS = [
   { key: 'wikiTitle', label: '위키 버튼 제목', placeholder: '위키 문서' },
 ]
 
+// 프로필·스테이터스 항목은 두 캐릭터가 같은 이름·순서로 함께 써요. (내용만 캐릭터마다 달라요)
+const SHARED_LISTS = ['profile', 'status']
+
+// 예전에 따로 만든 목록도 맞춰줘요: 이름이 같은 항목끼리 짝짓고, 한쪽에만 있는 항목은 다른 쪽에 빈 내용으로 넣어요.
+function alignLists(a = [], b = []) {
+  const rows = a.map((it) => ({ label: it.label || '', a: it }))
+  for (const it of b) {
+    const row = it.label && rows.find((r) => !r.b && r.label === it.label)
+    if (row) row.b = it
+    else rows.push({ label: it.label || '', b: it })
+  }
+  return [rows.map((r) => r.a || { label: r.label }), rows.map((r) => r.b || { label: r.label })]
+}
+
+function alignChars(config) {
+  const chars = config.chars.map((c) => ({ ...c }))
+  for (const key of SHARED_LISTS) [chars[0][key], chars[1][key]] = alignLists(chars[0][key], chars[1][key])
+  return { ...config, chars }
+}
+
+// 한쪽 목록이 next로 바뀌었을 때(추가·삭제·순서 바꾸기·이름 변경) 다른 쪽 목록을 같은 모양으로 맞춰요.
+// 목록 칸은 바뀌지 않은 항목을 그대로 두므로, 원래 몇 번째 항목이었는지로 다른 쪽 내용을 따라가요.
+function syncList(prev, next, other) {
+  return next.map((item, k) => {
+    const from = prev.indexOf(item)
+    const base = from >= 0 ? other[from] : next.length === prev.length ? other[k] : null
+    return { ...(base || {}), label: item.label ?? '' }
+  })
+}
+
 function PairEditor({ initial, startTab, onClose, onSave }) {
-  const [draft, setDraft] = useState(() => JSON.parse(JSON.stringify(initial)))
+  const [draft, setDraft] = useState(() => alignChars(JSON.parse(JSON.stringify(initial))))
   const [tab, setTab] = useState(startTab)
   const [busy, setBusy] = useState(false)
   const setChar = (i, patch) => setDraft((d) => ({ ...d, chars: d.chars.map((c, j) => (j === i ? { ...c, ...patch } : c)) }))
+  // 프로필·스테이터스를 고치면 다른 캐릭터의 항목 이름·순서·개수도 똑같이 맞춰요.
+  const setCharLists = (i, v) =>
+    setDraft((d) => {
+      const cur = d.chars[i]
+      const chars = d.chars.map((c, j) => (j === i ? { ...c, ...v } : c))
+      const o = 1 - i
+      for (const key of SHARED_LISTS) {
+        if (v[key] !== cur[key]) chars[o] = { ...chars[o], [key]: syncList(cur[key] || [], v[key] || [], d.chars[o][key] || []) }
+      }
+      return { ...d, chars }
+    })
   const ci = tab === 'page' ? null : Number(tab)
   const ch = ci !== null ? draft.chars[ci] : null
 
@@ -572,7 +615,7 @@ function PairEditor({ initial, startTab, onClose, onSave }) {
               <p className="field-help">입력하고 Enter나 쉼표(,)를 누르면 하나씩 들어가요.</p>
             </div>
           </div>
-          <Fields fields={CHAR_FIELDS} value={ch} onChange={(v) => setChar(ci, v)} />
+          <Fields fields={CHAR_FIELDS} value={ch} onChange={(v) => setCharLists(ci, v)} />
           <div className="fields">
             <div className="field">
               <span className="field-label">위키 문서 내용</span>
