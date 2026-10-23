@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>our diary</title>
+    <script>
+      // 첫 화면 깜빡임을 줄이기 위해 저장된 테마 모드를 먼저 적용합니다.
+      try {
+        var m = localStorage.getItem('od-mode');
+        if (m === 'dark' || (m !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.dataset.mode = 'dark';
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

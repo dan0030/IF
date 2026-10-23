@@ -1,0 +1,2 @@
+# 로컬 개발용 비밀값. 이 파일을 .dev.vars로 복사해서 쓰세요.
+ADMIN_PASSWORD=change-me

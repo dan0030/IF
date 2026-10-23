@@ -1,0 +1,615 @@
+/* ==================================================================
+   역극 로그 페이지
+   ================================================================== */
+
+.rp-page {
+  --wc: var(--accent);
+}
+.rp-intro {
+  margin: -6px 4px 18px;
+  color: var(--text-sub);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+.rp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.rp-search {
+  flex: 1 1 280px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0 8px 0 16px;
+  height: 46px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  color: var(--text-sub);
+}
+.rp-search:focus-within {
+  border-color: var(--accent);
+}
+.rp-search input,
+.rp-search input:focus,
+.rp-search input:focus-visible {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  height: 100%;
+  color: var(--text);
+  outline: none;
+}
+.rp-search-clear {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text-sub);
+}
+.rp-admin {
+  display: flex;
+  gap: 8px;
+}
+
+/* 세계선 탭 */
+.rp-worlds {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px 2px 4px;
+  margin-bottom: 14px;
+}
+.rp-worlds::-webkit-scrollbar {
+  display: none;
+}
+.rp-worlds button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-sub);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+.rp-worlds button small {
+  font-size: 0.74rem;
+  font-weight: 600;
+  opacity: 0.7;
+}
+.rp-worlds button.active {
+  background: color-mix(in srgb, var(--wc) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--wc) 45%, transparent);
+  color: color-mix(in srgb, var(--wc) 60%, var(--text));
+}
+.rp-world-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--wc) 85%, var(--text));
+}
+.rp-world-desc {
+  margin: 0 4px 16px;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--text-sub);
+  white-space: pre-line;
+}
+.rp-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.rp-filters .chip button {
+  margin-left: 4px;
+  border: none;
+  background: none;
+  color: inherit;
+  padding: 0 2px;
+}
+.rp-filter-count {
+  font-size: 0.82rem;
+  color: var(--text-sub);
+  margin-left: 4px;
+}
+
+/* 역극 카드 */
+/* 카드는 높이 제한 없이 벽돌처럼 쌓여요 */
+.rp-grid {
+  columns: 3 260px;
+  column-gap: 12px;
+  margin-bottom: 18px;
+}
+.rp-card {
+  position: relative;
+  break-inside: avoid;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  overflow: hidden;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s;
+}
+.rp-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+}
+.rp-card-link {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px 12px;
+  color: inherit;
+}
+.rp-card-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.rp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 750;
+  line-height: 1.2;
+}
+.rp-badge.world {
+  background: color-mix(in srgb, var(--wc) 14%, var(--surface));
+  color: color-mix(in srgb, var(--wc) 60%, var(--text));
+}
+.rp-badge.status {
+  background: var(--surface-2);
+  color: var(--text-sub);
+}
+.rp-badge.s-ongoing {
+  background: color-mix(in srgb, #22a06b 15%, var(--surface));
+  color: color-mix(in srgb, #22a06b 75%, var(--text));
+}
+.rp-badge.s-done {
+  background: color-mix(in srgb, var(--text) 9%, var(--surface));
+  color: var(--text);
+}
+.rp-pin {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--text-sub);
+}
+.rp-card-title {
+  font-size: 1.05rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.rp-card-title .fa-lock {
+  font-size: 0.85em;
+  color: var(--text-sub);
+}
+.rp-card-meta {
+  font-size: 0.78rem;
+  color: var(--text-sub);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rp-card-desc,
+.rp-card-snippet {
+  font-size: 0.86rem;
+  line-height: 1.65;
+  color: var(--text-sub);
+  white-space: pre-line;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+.rp-card-snippet {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  white-space: normal;
+}
+.rp-card mark,
+.rp-card-snippet mark {
+  padding: 0 1px;
+  border-radius: 3px;
+  background: color-mix(in srgb, #ffd54a 55%, transparent);
+  color: inherit;
+}
+.rp-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 18px 14px;
+}
+.rp-card-tags button {
+  padding: 3px 9px;
+  border: none;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-sub);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.rp-card-tags button:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* 글 보기: 제목 앞 태그 + 제목 아래 기간·설명 */
+.rp-title-tags {
+  --wc: var(--accent);
+  display: inline-flex;
+  gap: 6px;
+  margin-right: 10px;
+  vertical-align: 0.28em;
+}
+.rp-title-tags .rp-badge {
+  font-size: 0.8rem;
+  letter-spacing: 0;
+}
+.rp-post-info {
+  margin: 10px 0 4px;
+}
+.rp-post-info p {
+  margin: 8px auto 0;
+  max-width: 560px;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--text-sub);
+  white-space: pre-line;
+}
+
+/* 글쓰기의 역극 정보 칸 */
+.rp-write {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 16px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+}
+.rp-write .fields-heading {
+  margin-top: 0;
+}
+.rp-write .segmented {
+  flex-wrap: wrap;
+}
+.rp-write .field {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .rp-admin {
+    width: 100%;
+  }
+  .rp-admin .btn {
+    flex: 1;
+  }
+}
+
+/* 카드의 대표 대사 */
+.rp-card-quote {
+  display: block;
+  margin: 2px 0;
+}
+
+/* ---------------- 대본: 대사(두상 + 말풍선) · 지문 ---------------- */
+
+.rp-ava {
+  --cc: var(--accent);
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--cc) 18%, var(--surface));
+  color: color-mix(in srgb, var(--cc) 60%, var(--text));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cc) 45%, transparent);
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.rp-ava img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.rp-say-row {
+  --cc: var(--accent);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 14px 0;
+}
+.rp-say-row.right {
+  flex-direction: row-reverse;
+}
+.rp-say-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  max-width: min(78%, 620px);
+}
+.rp-say-row.right .rp-say-body {
+  align-items: flex-end;
+}
+.rp-say-name {
+  font-size: 0.78rem;
+  font-weight: 750;
+  color: color-mix(in srgb, var(--cc) 60%, var(--text));
+  padding: 0 4px;
+}
+.rp-bubble {
+  padding: 11px 15px;
+  border-radius: 6px 20px 20px 20px;
+  background: color-mix(in srgb, var(--cc) 13%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--cc) 22%, transparent);
+  line-height: 1.7;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.rp-say-row.right .rp-bubble {
+  border-radius: 20px 6px 20px 20px;
+}
+.rp-say-row.compact {
+  margin: 0;
+  gap: 9px;
+}
+.rp-say-row.compact .rp-say-body {
+  max-width: calc(100% - 44px);
+}
+.rp-say-row.compact .rp-bubble {
+  padding: 8px 12px;
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+.rp-say-row.compact .rp-say-name {
+  font-size: 0.72rem;
+}
+/* 지문은 소설처럼 */
+.rp-act-view {
+  margin: 18px 0;
+  padding: 0 6px;
+}
+.rp-act-view p {
+  margin: 0 0 0.9em;
+  line-height: 1.95;
+  color: color-mix(in srgb, var(--text) 82%, var(--text-sub));
+  text-align: justify;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+.rp-act-view p:last-child {
+  margin-bottom: 0;
+}
+.rp-script-view {
+  margin: 8px 0 4px;
+}
+
+/* ---------------- 대본 편집기 ---------------- */
+
+.rp-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+}
+.rp-editor-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rp-editor-head strong {
+  font-size: 0.95rem;
+}
+.rp-editor-head span {
+  font-size: 0.8rem;
+  color: var(--text-sub);
+}
+.rp-editor-head .btn {
+  margin-left: auto;
+}
+.rp-block {
+  position: relative;
+  padding: 10px 10px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.rp-block-say {
+  --cc: var(--accent);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.rp-speaker-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rp-speaker-pick button {
+  padding: 2px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  background: none;
+  opacity: 0.45;
+  transition: opacity 0.2s, border-color 0.2s;
+}
+.rp-speaker-pick button.active {
+  opacity: 1;
+  border-color: var(--cc);
+}
+.rp-block-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rp-block-name,
+.rp-block-label {
+  font-size: 0.76rem;
+  font-weight: 750;
+  color: color-mix(in srgb, var(--cc, var(--text)) 60%, var(--text));
+}
+.rp-block-label {
+  color: var(--text-sub);
+}
+.rp-block textarea {
+  width: 100%;
+  min-height: 42px;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.7;
+}
+.rp-bubble-input {
+  border-radius: 6px 18px 18px 18px !important;
+  background: color-mix(in srgb, var(--cc) 12%, var(--surface)) !important;
+}
+.rp-act-input {
+  background: var(--surface) !important;
+}
+.rp-block-act {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rp-block-tools {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  margin-top: 6px;
+}
+.rp-block-tools button {
+  width: 30px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 0.78rem;
+}
+.rp-block-tools button:hover:not(:disabled) {
+  background: var(--surface);
+  color: var(--text);
+}
+.rp-block-tools button.active {
+  color: #f0a500;
+}
+.rp-block-tools button.danger:hover {
+  color: var(--danger);
+}
+.rp-block-tools button:disabled {
+  opacity: 0.3;
+}
+.rp-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 4px;
+}
+.rp-add-btn {
+  --cc: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 6px;
+  border: 1px dashed color-mix(in srgb, var(--cc) 55%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cc) 8%, var(--surface));
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--cc) 60%, var(--text));
+  cursor: pointer;
+}
+.rp-add-btn.act {
+  padding-left: 14px;
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--text-sub);
+}
+.rp-import-text {
+  width: 100%;
+  line-height: 1.7;
+}
+
+/* 글쓰기: 등장 캐릭터 · 대표 대사 */
+.rp-cast-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rp-cast-pick button {
+  --cc: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 650;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+.rp-cast-pick button.active {
+  border-color: color-mix(in srgb, var(--cc) 50%, transparent);
+  background: color-mix(in srgb, var(--cc) 12%, var(--surface));
+  color: var(--text);
+}
+.rp-cast-pick button i {
+  font-size: 0.72rem;
+  color: color-mix(in srgb, var(--cc) 70%, var(--text));
+}
+.rp-quote-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (max-width: 640px) {
+  .rp-say-body {
+    max-width: calc(100% - 58px);
+  }
+  .rp-editor {
+    padding: 12px;
+  }
+}

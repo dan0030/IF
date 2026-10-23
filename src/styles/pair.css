@@ -1,0 +1,846 @@
+/* ==================================================================
+   캐릭터 페어 페이지
+   ================================================================== */
+
+
+.pair-page {
+  --pc: var(--accent);
+}
+/* 상세 화면은 큰 제목이 없어서 위쪽을 조금 띄워요 */
+.pair-detail {
+  padding-top: 8px;
+}
+.pair-page button {
+  font: inherit;
+  color: inherit;
+}
+
+/* 공통 글자 */
+.pair-tagline {
+  display: block;
+  margin-bottom: 14px;
+  font-size: 0.86rem;
+  color: var(--text-sub);
+  line-height: 1.5;
+}
+.pair-name {
+  display: block;
+  margin: 0;
+  font-family: var(--heading-font), var(--font), sans-serif;
+  font-size: clamp(2.4rem, 5.2vw, 5.4rem);
+  font-weight: 900;
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  overflow-wrap: anywhere;
+  transition: color 0.3s;
+}
+.pair-name.fit-name {
+  white-space: nowrap;
+}
+.pair-name.fit-name > span {
+  display: inline-block;
+}
+.pair-subname {
+  display: block;
+  margin-top: 12px;
+  font-size: 0.95rem;
+  letter-spacing: 0.22em;
+  color: var(--text-sub);
+}
+.pair-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 20px;
+}
+/* 대표 색이 옅어도 읽히도록 옅은 바탕 + 진한 글자 */
+.pair-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--pc) 38%, transparent);
+  background: color-mix(in srgb, var(--pc) 14%, var(--surface));
+  color: color-mix(in srgb, var(--pc) 45%, var(--text));
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.pair-intro {
+  display: block;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  font-size: 0.88rem;
+  line-height: 1.85;
+  color: var(--text-sub);
+  white-space: pre-line;
+  /* 양쪽 정렬: 단어 단위로만 줄을 바꾸면 띄어쓰기가 크게 벌어져서, 글자 사이에서도 자연스럽게 줄을 바꿔요 */
+  text-align: justify;
+  text-align-last: left;
+  word-break: normal;
+  line-break: normal;
+  overflow-wrap: anywhere;
+}
+.pair-col.right .pair-intro {
+  text-align-last: right;
+}
+
+/* ---------------- 첫 화면: 두 사람 카드 ---------------- */
+
+.pair-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.pair-pick {
+  --pc: var(--accent);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 10px 10px 18px;
+  border: var(--card-border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--card-shadow);
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.25s var(--ease), box-shadow 0.25s;
+}
+.pair-pick:hover {
+  transform: translateY(-3px);
+}
+.pair-pick-img {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  aspect-ratio: 4 / 5;
+  border-radius: calc(var(--radius) - 6px);
+  overflow: hidden;
+  background: var(--pc-bg, linear-gradient(180deg, color-mix(in srgb, var(--pc) 8%, var(--surface)), color-mix(in srgb, var(--pc) 24%, var(--surface))));
+}
+/* 전신 이미지를 확대해 반신이 보이게 */
+.pair-pick-img img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center top;
+  transform-origin: 50% var(--focus-y, 6%);
+  transform: scale(var(--zoom, 1.6));
+  transition: transform 0.6s var(--ease);
+}
+.pair-pick:hover .pair-pick-img img {
+  transform: scale(calc(var(--zoom, 1.6) * 1.04));
+}
+/* 마우스를 올리면 그림 뒤로 생기는 테두리 */
+.pair-panel-frame {
+  position: absolute;
+  inset: 14px;
+  z-index: 0;
+  border: 2px solid color-mix(in srgb, var(--pc) 85%, var(--text));
+  border-radius: 18px;
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 0.4s, transform 0.5s var(--ease);
+  pointer-events: none;
+}
+.pair-panel-frame::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 1px solid color-mix(in srgb, var(--pc) 45%, transparent);
+  border-radius: 13px;
+}
+.pair-pick:hover .pair-panel-frame,
+.pair-pick:focus-visible .pair-panel-frame {
+  opacity: 1;
+  transform: none;
+}
+.pair-panel-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  font-size: 3.4rem;
+  color: color-mix(in srgb, var(--pc) 45%, transparent);
+}
+.pair-pick-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 0 6px;
+  min-width: 0;
+}
+.pair-pick-name {
+  display: block;
+  width: 100%;
+  font-family: var(--heading-font), var(--font), sans-serif;
+  font-size: clamp(1.4rem, 3.4vw, 2rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.pair-pick-name > span {
+  display: inline-block;
+}
+.pair-pick .pair-keywords {
+  justify-content: center;
+  margin-top: 0;
+}
+.pair-wiki-btn.pair-world-btn {
+  margin-top: 14px;
+}
+.pair-empty-hint {
+  margin-top: 14px;
+  text-align: center;
+  color: var(--text-sub);
+  font-size: 0.88rem;
+}
+@media (max-width: 640px) {
+  .pair-cards {
+    gap: 10px;
+  }
+  .pair-pick {
+    padding: 8px 8px 14px;
+    gap: 10px;
+  }
+  .pair-pick .pair-chip {
+    font-size: 0.72rem;
+    padding: 5px 9px;
+  }
+}
+
+/* ---------------- 상세 화면 ---------------- */
+
+.pair-detail {
+  animation: pair-in 0.45s var(--ease);
+}
+@keyframes pair-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+.pair-detail-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.pair-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px 9px 12px;
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  font-weight: 700;
+  cursor: pointer;
+}
+.pair-switch {
+  display: inline-flex;
+  padding: 4px;
+  gap: 2px;
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+.pair-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-sub) !important;
+  cursor: pointer;
+  transition: background-color 0.25s, color 0.25s;
+}
+.pair-switch button.active {
+  background: var(--surface);
+  color: var(--text) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.pair-switch-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pc) 85%, var(--text));
+}
+
+.pair-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: clamp(20px, 4vw, 56px);
+  align-items: start;
+}
+.pair-figure {
+  justify-self: center;
+  width: 100%;
+  position: sticky;
+  top: calc(var(--topbar-h, 56px) + 16px);
+  aspect-ratio: 5 / 8;
+  max-height: calc(100vh - 120px);
+  border-radius: 32px;
+  overflow: hidden;
+  background: var(--pc-bg, linear-gradient(180deg, color-mix(in srgb, var(--pc) 8%, var(--surface)), color-mix(in srgb, var(--pc) 26%, var(--surface))));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.14);
+}
+.pair-figure img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  animation: pair-figure-in 0.7s var(--ease);
+}
+/* 첫 화면에서 마우스를 올렸을 때의 테두리를 상세 화면에서는 늘 보여줘요 */
+.pair-figure .pair-panel-frame {
+  opacity: 1;
+  transform: none;
+  animation: pair-frame-in 0.6s var(--ease);
+}
+@keyframes pair-frame-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+@keyframes pair-figure-in {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+/* 오른쪽 정보: 첫 화면과 같은 글자 구성 + 납작한 One UI 카드 */
+.pair-info {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding-top: 12px;
+}
+.pair-info > .pair-keywords {
+  margin-top: 6px;
+}
+.pair-info > .pair-intro {
+  margin: 4px 0 6px;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.pair-wiki-btn,
+.pair-card {
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+}
+.pair-wiki-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 18px 12px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.pair-wiki-btn:hover {
+  background: color-mix(in srgb, var(--pc) 8%, var(--surface));
+}
+.pair-wiki-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--pc) 16%, var(--surface));
+  color: color-mix(in srgb, var(--pc) 55%, var(--text));
+  font-size: 1rem;
+}
+.pair-wiki-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.pair-wiki-text small {
+  color: var(--text-sub);
+  font-size: 0.78rem;
+}
+.pair-wiki-btn > .fa-chevron-right {
+  color: var(--text-sub);
+  font-size: 0.8rem;
+}
+
+.pair-card {
+  padding: 18px 22px 20px;
+}
+.pair-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-sub);
+}
+.pair-card-title::before {
+  content: '';
+  width: 4px;
+  height: 14px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--pc) 80%, var(--text));
+}
+.pair-card .prose {
+  font-size: 0.95rem;
+  text-align: justify;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+.pair-profile {
+  margin: 0;
+}
+.pair-profile-row {
+  display: flex;
+  gap: 16px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+}
+.pair-profile-row:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+.pair-profile-row:last-child {
+  padding-bottom: 0;
+}
+.pair-profile dt {
+  flex: none;
+  width: 96px;
+  color: var(--text-sub);
+  font-size: 0.88rem;
+}
+.pair-profile dd {
+  flex: 1;
+  margin: 0;
+  font-weight: 600;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.pair-status {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.pair-status-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+.pair-status-head strong {
+  color: color-mix(in srgb, var(--pc) 60%, var(--text));
+  font-variant-numeric: tabular-nums;
+}
+.pair-status-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pc) 15%, var(--surface-2));
+  overflow: hidden;
+}
+.pair-status-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--pc) 85%, var(--text));
+  transform-origin: left;
+  animation: pair-bar 0.9s var(--ease);
+}
+@keyframes pair-bar {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .pair-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pair-figure {
+    position: relative;
+    top: 0;
+    width: min(100%, 420px);
+    max-height: 62vh;
+    margin: 0 auto;
+    border-radius: 26px;
+  }
+}
+
+/* ---------------- 위키 팝업 ---------------- */
+
+.wiki-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: wiki-fade 0.25s ease;
+}
+@keyframes wiki-fade {
+  from {
+    opacity: 0;
+  }
+}
+.wiki-window {
+  display: flex;
+  flex-direction: column;
+  width: min(880px, 100%);
+  height: min(86vh, 960px);
+  border-radius: 28px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: wiki-pop 0.35s var(--ease);
+}
+@keyframes wiki-pop {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+}
+.wiki-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.wiki-head strong {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.02rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wiki-head-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.wiki-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 22px 28px 40px;
+}
+@media (max-width: 640px) {
+  .wiki-backdrop {
+    padding: 0;
+    place-items: stretch;
+  }
+  .wiki-window {
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    border-radius: 0;
+    animation: wiki-up 0.35s var(--ease);
+  }
+  @keyframes wiki-up {
+    from {
+      transform: translateY(40px);
+      opacity: 0;
+    }
+  }
+  .wiki-head {
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+  .wiki-body {
+    padding: 18px 18px 40px;
+  }
+}
+
+/* ---------------- 편집 ---------------- */
+
+.pair-edit-tabs {
+  width: 100%;
+  margin-bottom: 16px;
+}
+.pair-edit-tabs button {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kw-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.kw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 6px 5px 12px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+.kw-chip button {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  color: inherit;
+  font-size: 0.7rem;
+}
+.kw-input input {
+  flex: 1 1 140px;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 6px;
+}
+
+/* 상세 화면: 이미지 + 이름 영역 아래로 프로필·스테이터스 등을 넓게 */
+.pair-detail-grid {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  align-items: center;
+  margin-bottom: 18px;
+}
+.pair-detail .pair-figure {
+  position: relative;
+  top: auto;
+  max-height: 520px;
+}
+.pair-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+@media (max-width: 640px) {
+  .pair-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 상세 이미지: 카드 폭은 줄이고 이미지는 크게, 여러 장은 옆으로 넘기기 */
+.pair-detail-grid {
+  grid-template-columns: minmax(0, 0.76fr) minmax(0, 1.24fr);
+}
+/* 폭은 좁게, 세로로 길게 → 전신 이미지가 더 크게 보여요 */
+.pair-detail .pair-figure {
+  aspect-ratio: 1 / 2;
+  max-height: min(680px, calc(100vh - 140px));
+}
+.pair-detail .pair-figure .pair-panel-frame {
+  inset: 10px;
+}
+.pair-slides {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  outline: none;
+}
+.pair-slides::-webkit-scrollbar {
+  display: none;
+}
+.pair-slide {
+  position: relative;
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+.pair-slide img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+}
+.pair-zoom-btn,
+.pair-slide-arrow {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.pair-zoom-btn {
+  top: 12px;
+  right: 12px;
+}
+.pair-zoom-btn:hover {
+  transform: scale(1.06);
+}
+.pair-slide-arrow {
+  top: 50%;
+  margin-top: -18px;
+  opacity: 0;
+}
+.pair-slide-arrow.prev {
+  left: 10px;
+}
+.pair-slide-arrow.next {
+  right: 10px;
+}
+.pair-figure:hover .pair-slide-arrow:not(:disabled) {
+  opacity: 1;
+}
+.pair-slide-arrow:disabled {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+.pair-slide-dots {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.pair-slide-dots button {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 30%, transparent);
+  transition: width 0.25s var(--ease), background-color 0.25s;
+}
+.pair-slide-dots button.active {
+  width: 18px;
+  background: color-mix(in srgb, var(--pc) 80%, var(--text));
+}
+@media (hover: none) {
+  .pair-slide-arrow {
+    display: none;
+  }
+}
+
+/* 크게 보기 */
+.pair-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  place-items: center;
+  background: rgba(10, 10, 14, 0.88);
+  animation: wiki-fade 0.2s ease;
+}
+.pair-zoom img {
+  max-width: 94vw;
+  max-height: 92vh;
+  object-fit: contain;
+  user-select: none;
+}
+.pair-zoom-close,
+.pair-zoom-arrow {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.pair-zoom-close {
+  top: max(16px, env(safe-area-inset-top));
+  right: 16px;
+}
+.pair-zoom-arrow {
+  top: 50%;
+  margin-top: -22px;
+}
+.pair-zoom-arrow.prev {
+  left: 16px;
+}
+.pair-zoom-arrow.next {
+  right: 16px;
+}
+.pair-zoom-arrow:disabled {
+  opacity: 0.25;
+}
+.pair-zoom-count {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 640px) {
+  .pair-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pair-detail .pair-figure {
+    width: min(100%, 340px);
+    aspect-ratio: 3 / 5;
+    max-height: 70vh;
+    margin: 0 auto;
+  }
+}
