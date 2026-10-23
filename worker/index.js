@@ -3,6 +3,7 @@ import { allReferencedKeys, deleteFile, difference, extractKeys, keysOfCategorie
 import { checkPassword, hashPassword, randomId, safeEqual, sign, verify } from './crypto.js'
 
 const SESSION_COOKIE = 'od_session'
+const VIEWER_COOKIE = 'od_viewer'
 const SESSION_DAYS = 30
 const SETTING_KEYS = ['site', 'theme', 'home']
 // 카테고리 페이지 종류: posts(일반 게시판) · thread(타임라인 타래). 새 종류는 여기에 추가해요.
@@ -142,6 +143,38 @@ function sessionCookie(value, maxAge) {
   return `${SESSION_COOKIE}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`
 }
 
+/* ------------------------------------------------------------------ */
+/* 조회수                                                              */
+/* ------------------------------------------------------------------ */
+
+// 방문자를 알아보는 표시 두 가지: 브라우저 쿠키, 그리고 IP+브라우저 정보를 암호화한 값(IP 원본은 저장하지 않아요).
+// 둘 중 하나라도 이 글을 본 적이 있으면 같은 사람으로 봐요. (쿠키를 지우거나 와이파이가 바뀌어도 한 번만 세게)
+async function viewerKeys(request, env) {
+  let vid = readCookie(request, VIEWER_COOKIE)
+  let setCookie = null
+  if (!vid || !/^[\w-]{8,40}$/.test(vid)) {
+    vid = randomId(12)
+    setCookie = `${VIEWER_COOKIE}=${vid}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${365 * 86400}`
+  }
+  const keys = [`c:${vid}`]
+  const ip = request.headers.get('cf-connecting-ip')
+  if (ip) keys.push(`n:${(await sign(sessionSecret(env), `viewer:${ip}:${request.headers.get('user-agent') || ''}`)).slice(0, 24)}`)
+  return { keys, setCookie }
+}
+
+// 처음 보는 사람일 때만 조회수를 1 올려요. 관리자는 세지 않고, 본 기록만 남겨서
+// 같은 브라우저로 로그아웃한 채 다시 봐도 세지 않게 해요.
+async function recordView(db, postId, keys, count) {
+  const seen = await db
+    .prepare(`SELECT 1 FROM post_views WHERE post_id = ? AND viewer IN (${keys.map(() => '?').join(', ')}) LIMIT 1`)
+    .bind(postId, ...keys)
+    .first()
+  const now = nowIso()
+  const stmts = keys.map((k) => db.prepare('INSERT OR IGNORE INTO post_views (post_id, viewer, created_at) VALUES (?, ?, ?)').bind(postId, k, now))
+  if (!seen && count) stmts.push(db.prepare('UPDATE posts SET views = views + 1 WHERE id = ?').bind(postId))
+  await db.batch(stmts)
+}
+
 const loginFailures = new Map()
 
 function tooManyFailures(ip) {
@@ -258,8 +291,10 @@ async function handleApi(request, env, ctx, url) {
     const id = Number(m[1])
     if (method === 'GET') {
       const result = await getPost(db, id, admin, false)
-      if (!admin && !result.locked) ctx.waitUntil(db.prepare('UPDATE posts SET views = views + 1 WHERE id = ?').bind(id).run())
-      return json(result)
+      if (result.locked) return json(result)
+      const viewer = await viewerKeys(request, env)
+      ctx.waitUntil(recordView(db, id, viewer.keys, !admin).catch((err) => console.error('조회수 기록 실패', err)))
+      return json(result, 200, viewer.setCookie ? { 'set-cookie': viewer.setCookie } : {})
     }
     if (method === 'PUT') {
       requireAdmin()
@@ -275,6 +310,7 @@ async function handleApi(request, env, ctx, url) {
       const beforeKeys = await keysOfPosts(db, [id])
       await db.batch([
         db.prepare('DELETE FROM comments WHERE post_id = ? OR post_id IN (SELECT id FROM posts WHERE thread_id = ?)').bind(id, id),
+        db.prepare('DELETE FROM post_views WHERE post_id = ? OR post_id IN (SELECT id FROM posts WHERE thread_id = ?)').bind(id, id),
         db.prepare('DELETE FROM posts WHERE id = ? OR thread_id = ?').bind(id, id),
       ])
       const removed = await removeUnused(env, [...beforeKeys])
@@ -287,8 +323,9 @@ async function handleApi(request, env, ctx, url) {
     const { password } = await readJson(request)
     const row = await db.prepare('SELECT password_hash FROM posts WHERE id = ? AND visibility = ?').bind(id, 'protected').first()
     if (!row || !(await checkPassword(password || '', row.password_hash))) throw new HttpError(403, '비밀번호가 맞지 않아요.')
-    ctx.waitUntil(db.prepare('UPDATE posts SET views = views + 1 WHERE id = ?').bind(id).run())
-    return json(await getPost(db, id, admin, true))
+    const viewer = await viewerKeys(request, env)
+    ctx.waitUntil(recordView(db, id, viewer.keys, !admin).catch((err) => console.error('조회수 기록 실패', err)))
+    return json(await getPost(db, id, admin, true), 200, viewer.setCookie ? { 'set-cookie': viewer.setCookie } : {})
   }
 
   if ((m = path.match(/^\/posts\/(\d+)\/react$/)) && method === 'POST') {
@@ -977,6 +1014,7 @@ async function importAll(db, data) {
     db.prepare('DELETE FROM categories'),
     db.prepare('DELETE FROM posts'),
     db.prepare('DELETE FROM comments'),
+    db.prepare('DELETE FROM post_views'),
   ]
   const insert = (table, row, columns) => {
     const cols = columns.filter((c) => c in row)

@@ -54,6 +54,13 @@ const TABLES = [
     created_at TEXT NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS idx_comments_post ON comments (post_id, created_at)`,
+  // 글마다 이미 본 방문자 (같은 사람이 여러 번 열어도 조회수는 한 번만 세요)
+  `CREATE TABLE IF NOT EXISTS post_views (
+    post_id INTEGER NOT NULL,
+    viewer TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (post_id, viewer)
+  )`,
   `CREATE TABLE IF NOT EXISTS files (
     key TEXT PRIMARY KEY,
     mime TEXT NOT NULL,
