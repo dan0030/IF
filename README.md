@@ -44,8 +44,10 @@ npm run deploy                         # 빌드 + 배포
 
 Cloudflare 대시보드 > Workers & Pages > 만들기 > **Git 저장소 가져오기**에서 이 저장소를 연결하세요.
 
+- 프로덕션 브랜치: `main` (사이트에는 `main`에 올린 내용만 반영돼요)
 - 빌드 명령: `npm run build`
 - 배포 명령: `npx wrangler deploy`
+- 다른 브랜치에 올릴 때마다 미리보기 빌드가 돌면서 실패로 표시될 수 있어요. 필요 없으면 설정 › 빌드 › **비프로덕션 브랜치 빌드**를 꺼두세요.
 
 `ADMIN_PASSWORD`는 Worker 설정 > 변수 및 비밀에 넣어주세요.
 
