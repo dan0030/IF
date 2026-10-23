@@ -555,7 +555,7 @@
   height: 36px;
   border-radius: 12px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .wiki-body {
   flex: 1;

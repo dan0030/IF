@@ -31,7 +31,7 @@
   font-size: 1.06rem;
 }
 .prose a {
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: underline;
   text-underline-offset: 0.18em;
   text-decoration-thickness: 1px;
@@ -109,12 +109,12 @@
 }
 .prose hr.heart::before {
   content: '♡ ♥ ♡';
-  color: var(--accent);
+  color: var(--accent-text);
   letter-spacing: 0.5em;
 }
 .prose hr.star::before {
   content: '✦ ✧ ✦';
-  color: var(--accent);
+  color: var(--accent-text);
   letter-spacing: 0.5em;
 }
 .prose .spacer {
@@ -209,7 +209,7 @@
   cursor: pointer;
   padding: 10px 0;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .prose details.fold[open] summary {
   border-bottom: 1px solid var(--line);
@@ -299,7 +299,7 @@
   display: inline-block;
   min-width: 4.5em;
   margin-right: 10px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* 프로필 카드 */

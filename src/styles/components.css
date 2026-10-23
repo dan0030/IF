@@ -113,7 +113,7 @@ a.chip:hover {
   margin: 0 6px;
   border-radius: 999px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.72rem;
   font-weight: 700;
   vertical-align: middle;
@@ -121,7 +121,7 @@ a.chip:hover {
 
 .lock-icon,
 .pin-icon {
-  color: var(--accent);
+  color: var(--accent-text);
   margin-right: 6px;
   font-size: 0.85em;
 }
@@ -269,7 +269,7 @@ textarea.code,
 }
 .segmented button.active {
   background: var(--surface);
-  color: var(--accent);
+  color: var(--accent-text);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 .segmented.small button {
@@ -390,7 +390,7 @@ textarea.code,
   place-items: center;
   border-radius: 12px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .icon-grid {
   margin-top: 8px;
@@ -415,7 +415,7 @@ textarea.code,
 .icon-grid-more {
   grid-column: 1 / -1;
   font-size: 0.8rem;
-  color: var(--accent);
+  color: var(--accent-text);
   padding: 6px;
 }
 
@@ -728,7 +728,7 @@ textarea.code,
 .post-cat {
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .post-thumb img {
   display: block;
@@ -935,7 +935,7 @@ textarea.code,
 .timeline-month {
   font-weight: 800;
   font-size: 0.95rem;
-  color: var(--accent);
+  color: var(--accent-text);
   margin: 18px 0 8px 2px;
 }
 .timeline-month:first-child {
@@ -1032,7 +1032,7 @@ textarea.code,
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 700;
   font-size: 0.9rem;
   margin-bottom: 10px;
@@ -1092,7 +1092,7 @@ textarea.code,
 .reactions button.active {
   background: var(--accent-soft);
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .reaction-emoji {
   font-size: 1.15rem;
@@ -1189,7 +1189,7 @@ textarea.code,
   font-size: 0.93rem;
 }
 .related a:hover .rel-title {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .rel-date {
   color: var(--text-sub);
@@ -1305,10 +1305,10 @@ textarea.code,
   font-size: 0.8rem;
 }
 .comment-actions button:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .comment.by-admin .comment-name {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .reply-list {
   list-style: none;
@@ -1326,7 +1326,7 @@ textarea.code,
   position: absolute;
   left: 4px;
   top: 14px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 @media (max-width: 640px) {
@@ -1349,7 +1349,7 @@ textarea.code,
 }
 .login-icon {
   font-size: 2rem;
-  color: var(--accent);
+  color: var(--accent-text);
   margin-bottom: 8px;
 }
 
@@ -1377,7 +1377,7 @@ textarea.code,
   display: grid;
   place-items: center;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.95rem;
 }
 .settings-icon.accent {
@@ -1413,7 +1413,7 @@ textarea.code,
   color: var(--text-sub);
 }
 .save-bar.show {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
 }
 /* 하단 탭이 있을 때: 저장 바는 탭 바로 위에 떠 있다가, 바꾼 게 있을 때만 나타나요. */
@@ -1544,7 +1544,7 @@ textarea.code,
   place-items: center;
   border-radius: 50%;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   flex: none;
 }
 .cat-edit-name {
@@ -1837,7 +1837,7 @@ textarea.code,
 }
 .tb-btn.active {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .tb-text {
   font-size: 0.8rem;
@@ -1930,7 +1930,7 @@ textarea.code,
 .tb-menu-items button:hover,
 .tb-menu-items button.active {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .tb-menu-items button.active {
   background: var(--accent-soft);
@@ -1958,7 +1958,7 @@ textarea.code,
 .upload-status {
   padding: 10px 16px;
   font-size: 0.85rem;
-  color: var(--accent);
+  color: var(--accent-text);
   border-top: 1px solid var(--line);
 }
 
@@ -2131,7 +2131,7 @@ textarea.code,
   place-items: center;
   border-radius: 50%;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .page-type-pick button small {
   color: var(--text-sub);
@@ -2293,7 +2293,7 @@ textarea.code,
 .tw-actions a:hover,
 .tw-actions button:hover,
 .tw-actions .accent {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .tw-actions .danger:hover {
   color: var(--danger);
@@ -2338,7 +2338,7 @@ textarea.code,
   text-align: left;
 }
 .tw-compose-open:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .tw-composer {
   display: flex;
@@ -2384,7 +2384,7 @@ textarea.code,
 }
 .tw-author-pick button.active {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 @media (max-width: 640px) {
@@ -2450,7 +2450,7 @@ textarea.code,
   font-size: 0.85rem;
 }
 .img-editor-guide i {
-  color: var(--accent);
+  color: var(--accent-text);
   margin-top: 3px;
 }
 .img-editor-guide small {
@@ -2619,10 +2619,10 @@ textarea.code,
   color: var(--text-sub);
 }
 .image-guide-hint i {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .image-guide-hint a {
-  color: var(--accent);
+  color: var(--accent-text);
   margin-left: auto;
 }
 .editor-area img.img-selected {
@@ -2663,7 +2663,7 @@ textarea.code,
   border-radius: 10px;
   background: var(--accent-soft);
   border: 2px solid var(--accent);
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.78rem;
   font-weight: 800;
 }
@@ -2682,7 +2682,7 @@ textarea.code,
 }
 .guide-size {
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.88rem;
 }
 .guide-where {
@@ -2744,7 +2744,7 @@ textarea.code,
   border-radius: 50%;
   overflow: hidden;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .group-icon img {
   width: 100%;
@@ -2886,7 +2886,7 @@ textarea.code,
   color: var(--text-sub);
 }
 .masonry-text i {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .masonry-text span {
   display: -webkit-box;
@@ -3001,7 +3001,7 @@ textarea.code,
 }
 .album-cell.no-thumb span i {
   font-size: 1.1rem;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .album-pin {
   position: absolute;
@@ -3047,7 +3047,7 @@ textarea.code,
   color: var(--text-sub);
 }
 .nav-preview span.active {
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
 }
 .nav-preview small {
@@ -3076,7 +3076,7 @@ textarea.code,
   place-items: center;
   border-radius: 50%;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.85rem;
 }
 .nav-row-admin {
@@ -3121,7 +3121,7 @@ textarea.code,
 }
 .img-tool-label {
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
   margin-right: auto;
 }
 .img-tool-bar button {

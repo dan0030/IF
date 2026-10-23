@@ -9,6 +9,7 @@ import { DEFAULT_HOME } from '../lib/defaults.js'
 import { uid } from '../lib/format.js'
 import { IN_PREVIEW, hasMobileLayout, useIsMobile } from '../lib/device.js'
 import { PhonePreview } from './HomePreview.jsx'
+import { legibleOn, readableOn } from '../lib/color.js'
 
 const SIZE_LABEL = { S: '작게', M: '중간', L: '크게' }
 
@@ -313,20 +314,42 @@ export function PageDots({ style, count, active, onSelect }) {
   )
 }
 
-function widgetStyle(config) {
+// 위젯 배경 스타일별로 실제 바탕색과 기본 글자색 (글자가 묻히는지 계산할 때 써요)
+function widgetColors(styleName, pal) {
+  if (styleName === 'accent') return { bg: pal.accent, fg: pal.accentText || '#fff' }
+  if (styleName === 'memo') return { bg: pal.memo, fg: pal.memoText }
+  if (styleName === 'card' || styleName === 'tinted' || styleName === 'glass') return { bg: pal.surface, fg: pal.text }
+  return { bg: pal.bg, fg: pal.text } // 테두리만·투명: 사이트 배경이 비쳐요
+}
+
+function widgetStyle(config, styleName, pal) {
   const style = {}
   if (config.bg) style['--w-bg'] = config.bg
   if (config.color) style['--w-color'] = config.color
   if (config.bgImage) style['--w-image'] = `url("${config.bgImage}")`
+  // 배경색·글자색을 직접 정했는데 서로 묻혀 안 보이면 흰색·검정 중 잘 보이는 색으로 바꿔요. (배경 이미지를 쓸 땐 그대로)
+  if (pal && (config.bg || config.color) && !config.bgImage) {
+    const base = widgetColors(styleName, pal)
+    const bg = config.bg || base.bg
+    const fg = readableOn(bg, config.color || base.fg, pal.bg)
+    if (config.color || fg !== base.fg) style['--w-color'] = fg
+    // 배경색을 바꿨으면 안쪽의 보조 글자·포인트 색 글자도 그 배경에 맞춰요.
+    if (config.bg) {
+      style['--text'] = fg
+      style['--text-sub'] = `color-mix(in srgb, ${fg} 68%, transparent)`
+      style['--accent-text'] = legibleOn(pal.accent, bg, fg, pal.bg)
+    }
+  }
   return style
 }
 
 export function WidgetFrame({ widget, children, editing }) {
+  const { theme, mode } = useApp()
   const def = WIDGETS[widget.type]
   const config = widget.config || {}
   const styleName = config.style || (def?.bare ? 'bare' : 'card')
   const h = Number(widget.height) || 0
-  const style = { ...widgetStyle(config), gridColumn: `span ${spanOf(widget)}` }
+  const style = { ...widgetStyle(config, styleName, mode === 'dark' ? theme.dark : theme.light), gridColumn: `span ${spanOf(widget)}` }
   if (h) style['--w-height'] = `${h}px`
   return (
     <div

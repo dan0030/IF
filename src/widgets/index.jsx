@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useApp } from '../lib/store.jsx'
+import { legibleOn } from '../lib/color.js'
 import { api } from '../lib/api.js'
 import { daysSince, ddayLabel, formatDate, nextAnnual, pad, parseDate, todayStr, youtubeId } from '../lib/format.js'
 import { PostList } from '../components/PostList.jsx'
@@ -58,8 +59,11 @@ function Placeholder({ icon, children }) {
 /* ------------------------------------------------------------------ */
 
 function ProfileWidget({ config }) {
-  const { site, stats } = useApp()
+  const { site, stats, theme, mode: colorMode } = useApp()
   const { pair } = site
+  const pal = colorMode === 'dark' ? theme.dark : theme.light
+  // 두 사람 사이 아이콘: 아이콘 색이 바탕색에 묻히면 본문 글자색 쪽으로 진하게 해요.
+  const symbolColor = pair.symbolColor || pair.symbolBg ? legibleOn(pair.symbolColor || pal.accent, pair.symbolBg || pal.surface, pal.text, pal.bg) : undefined
   const mode = config.mode || 'pair'
   const layout = config.layout || 'row'
   const days = daysSince(pair.startDate)
@@ -77,7 +81,7 @@ function ProfileWidget({ config }) {
         <Avatar who={mode === 'pair' ? first : mode === 'partner' ? pair.partner : pair.me} />
         {mode === 'pair' && (
           <>
-            <span className="profile-symbol" style={{ color: pair.symbolColor || undefined, background: pair.symbolBg || undefined }}>
+            <span className="profile-symbol" style={{ color: symbolColor, background: pair.symbolBg || undefined }}>
               <i className={pair.symbol || 'fa-solid fa-heart'} />
             </span>
             <Avatar who={second} />

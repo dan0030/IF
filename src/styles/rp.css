@@ -262,7 +262,7 @@
 }
 .rp-card-tags button:hover {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* 글 보기: 제목 앞 태그 + 제목 아래 기간·설명 */

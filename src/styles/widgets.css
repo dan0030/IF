@@ -304,7 +304,7 @@
   gap: 8px;
 }
 .widget-title i {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .style-accent .widget-title i {
   color: inherit;
@@ -385,7 +385,7 @@
   place-items: center;
   border-radius: 50%;
   background: var(--surface);
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.85rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   animation: beat 1.8s ease-in-out infinite;
@@ -595,7 +595,7 @@
   place-items: center;
   border-radius: 50%;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .style-accent .dday-icon {
   background: rgba(255, 255, 255, 0.2);
@@ -667,7 +667,7 @@
 .clock-label {
   margin-top: 4px;
   font-size: 0.82rem;
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
 }
 .clock-widget.analog {
@@ -747,7 +747,7 @@
   transform: translateX(3px);
 }
 .notice-item strong {
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.98rem;
 }
 .style-accent .notice-item strong {
@@ -915,7 +915,7 @@
   display: grid;
   place-items: center;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 1.3rem;
 }
 .playlist-cover img {
@@ -938,7 +938,7 @@
 }
 .playlist-play {
   font-size: 1.9rem;
-  color: var(--accent);
+  color: var(--accent-text);
   margin-right: 4px;
 }
 .style-accent .playlist-play {
@@ -1106,7 +1106,7 @@ button.cal-day.today {
 }
 .cal-event-day {
   font-weight: 800;
-  color: var(--accent);
+  color: var(--accent-text);
   min-width: 42px;
   font-variant-numeric: tabular-nums;
 }
@@ -1257,7 +1257,7 @@ button.cal-day.today {
   text-align: inherit;
 }
 .quote-mark {
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 1.1rem;
 }
 .style-accent .quote-mark {
@@ -1296,7 +1296,7 @@ button.cal-day.today {
 .links-widget i {
   width: 20px;
   text-align: center;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .links-widget.icons {
   flex-direction: row;
@@ -1435,7 +1435,7 @@ button.cal-day.today {
   opacity: 0.8;
 }
 .bgm-controls button:hover {
-  color: var(--accent);
+  color: var(--accent-text);
   opacity: 1;
 }
 .bgm-controls .bgm-play {
@@ -1527,7 +1527,7 @@ button.cal-day.today {
 }
 .edit-page-name {
   font-weight: 800;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .edit-slot {
   position: relative;
@@ -1582,7 +1582,7 @@ button.cal-day.today {
 }
 .edit-buttons button:hover {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .edit-buttons button.danger {
   color: var(--danger);
@@ -1606,7 +1606,7 @@ button.cal-day.today {
 }
 .add-widget:hover {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .widget-picker {
   display: grid;
@@ -1658,7 +1658,7 @@ button.cal-day.today {
 .widget-import-badge {
   margin-left: auto;
   flex: none;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.78rem;
   white-space: nowrap;
 }
@@ -1670,7 +1670,7 @@ button.cal-day.today {
   place-items: center;
   border-radius: 10px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 @media (max-width: 640px) {
@@ -1793,7 +1793,7 @@ button.cal-day.today {
 
 .btn.tonal {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .home-target-pick button {
   padding: 6px 12px;
@@ -1837,7 +1837,7 @@ button.cal-day.today {
   height: 64px;
   border-radius: 22px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 1.7rem;
   margin-bottom: 12px;
 }
@@ -1905,7 +1905,7 @@ button.cal-day.today {
   font-weight: 800;
 }
 .phone-preview-title i {
-  color: var(--accent);
+  color: var(--accent-text);
   margin-right: 4px;
 }
 .phone-preview-title small {
@@ -1914,7 +1914,7 @@ button.cal-day.today {
   color: var(--text-sub);
 }
 .phone-preview-title small.on {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .phone-preview-hint {
   margin: 0 6px;
@@ -2039,7 +2039,7 @@ button.cal-day.today {
   white-space: nowrap;
 }
 .day-posts a > i:first-child {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .day-post-go {
   font-size: 0.75rem;

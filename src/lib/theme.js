@@ -1,4 +1,5 @@
 import { FONTS } from './defaults.js'
+import { legibleOn, readableOn } from './color.js'
 
 const loadedFonts = new Set()
 
@@ -127,7 +128,10 @@ export function applyTheme(theme, mode) {
   const pal = mode === 'dark' ? theme.dark : theme.light
   const vars = {
     '--accent': pal.accent,
-    '--on-accent': pal.accentText || '#fff',
+    // 포인트 색 버튼 위 글자: 정한 글자색이 버튼 색에 묻히면 흰색·검정 중 잘 보이는 색으로 바꿔요.
+    '--on-accent': readableOn(pal.accent, pal.accentText || '#fff', pal.bg),
+    // 포인트 색을 글자로 쓰는 곳(연한 버튼·링크·아이콘): 카드 색에 묻히면 본문 글자색 쪽으로 진하게 해요.
+    '--accent-text': legibleOn(pal.accent, pal.surface, pal.text, pal.bg),
     '--accent-soft': `color-mix(in srgb, ${pal.accent} 14%, transparent)`,
     '--bg': pal.bg,
     '--bg2': pal.bg2,
@@ -138,7 +142,7 @@ export function applyTheme(theme, mode) {
     '--line': pal.line,
     '--drawer-bg': pal.drawer,
     '--memo-bg': pal.memo,
-    '--memo-text': pal.memoText,
+    '--memo-text': readableOn(pal.memo, pal.memoText, pal.surface),
     '--page-bg': pageBackground(theme, pal, mode),
     '--font': fontFamily(theme.font, theme),
     '--heading-font': theme.headingFont === 'same' ? 'var(--font)' : fontFamily(theme.headingFont, theme),

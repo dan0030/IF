@@ -17,6 +17,7 @@
   --drawer-bg: #f4f4f6;
   --memo-bg: #fff6c2;
   --memo-text: #2b2a20;
+  --accent-text: var(--accent);
   --danger: #e5484d;
   --page-bg: var(--bg);
   --font: 'Pretendard Variable', Pretendard;
@@ -323,7 +324,7 @@ h4 {
   transform: scale(0.92);
 }
 .icon-btn.accent {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .icon-btn.small {
   width: 32px;
@@ -366,7 +367,7 @@ h4 {
 }
 
 .large-title-eyebrow {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 700;
   font-size: 0.95rem;
   margin-bottom: 8px;
@@ -498,7 +499,7 @@ h4 {
   transition: background-color 0.2s, color 0.2s, transform 0.15s;
 }
 .drawer-tile:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .drawer-tile:active {
   transform: scale(0.95);
@@ -510,7 +511,7 @@ h4 {
   place-items: center;
   border-radius: 50%;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.95rem;
 }
 
@@ -538,7 +539,7 @@ h4 {
 }
 .drawer-account a:hover,
 .drawer-account button:hover {
-  color: var(--accent);
+  color: var(--accent-text);
   border-color: var(--accent);
 }
 
@@ -667,7 +668,7 @@ h4 {
 .drawer-icons a:hover,
 .drawer-icons button:hover {
   background: var(--surface);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .search-field {
@@ -680,7 +681,7 @@ h4 {
   padding: 0 14px;
 }
 .search-field i {
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.9rem;
 }
 form.search-field input,
@@ -722,7 +723,7 @@ form.search-field input:focus {
 }
 .cat-link:hover {
   background: var(--surface);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .cat-link.sub {
   padding-left: 22px;
@@ -783,7 +784,7 @@ form.search-field input:focus {
   transform: rotate(90deg);
 }
 .cat-item.open > .cat-toggle {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .cat-children {
   overflow: hidden;
@@ -809,7 +810,7 @@ form.search-field input:focus {
 }
 .drawer-links a:hover {
   background: var(--surface);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .drawer-links i {
   width: 18px;
@@ -855,7 +856,7 @@ form.search-field input:focus {
   font-size: 1.05rem;
 }
 .bottom-nav a.active {
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
   font-weight: 700;
 }
@@ -961,7 +962,7 @@ form.search-field input:focus {
   margin-right: auto;
 }
 .large-title-sub a {
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: underline;
 }
 
@@ -1016,7 +1017,7 @@ form.search-field input:focus {
   flex: 1;
 }
 .browser-btn.accent {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .browser-btn {
   width: 34px;
@@ -1054,7 +1055,7 @@ form.search-field input:focus {
 }
 .browser-url i {
   font-size: 0.7rem;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .browser-url span {
   white-space: nowrap;
@@ -1276,7 +1277,7 @@ html.inner-scroll.home-fixed #root {
   background: color-mix(in srgb, var(--surface) 88%, transparent);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 0.88rem;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
   opacity: 0;
