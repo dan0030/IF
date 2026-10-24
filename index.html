@@ -5,11 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>our diary</title>
     <script>
-      // 첫 화면 깜빡임을 줄이기 위해 저장된 테마 모드를 먼저 적용합니다.
+      // 첫 화면 깜빡임을 줄이기 위해 라이트/다크 모드와 사이트 색을 먼저 적용합니다.
+      // window.__OD_BOOT: 서버가 HTML에 넣어주는 사이트 색 (관리 › 디자인에 맞춰 자동으로 저장돼요)
       try {
-        var m = localStorage.getItem('od-mode');
-        if (m === 'dark' || (m !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-          document.documentElement.dataset.mode = 'dark';
+        var b = window.__OD_BOOT || null;
+        var m = null;
+        try { m = localStorage.getItem('od-mode'); } catch (e) {}
+        if (b && b.allowToggle === false) m = null;
+        var dark = m === 'dark' || (m !== 'light' && (b && (b.mode === 'dark' || b.mode === 'light') ? b.mode === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches));
+        var root = document.documentElement;
+        if (dark) root.dataset.mode = 'dark';
+        var p = b && (dark ? b.dark : b.light);
+        if (p) {
+          var vars = { bg: '--bg', accent: '--accent', onAccent: '--on-accent', text: '--text', textSub: '--text-sub', surface: '--surface' };
+          for (var k in vars) if (p[k]) root.style.setProperty(vars[k], p[k]);
+          if (p.bg) root.style.setProperty('--page-bg', p.bg);
+          if (p.accent) root.style.setProperty('--accent-text', p.accent);
         }
       } catch (e) {}
     </script>

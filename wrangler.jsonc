@@ -10,8 +10,11 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/files/*"]
+    // 페이지(HTML)도 Worker를 거쳐서 로딩 화면에 사이트 색을 미리 넣어요. 빌드된 파일(/assets)은 바로 내보내요.
+    "run_worker_first": ["/*", "!/assets/*"]
   },
+  // Worker를 데이터베이스(D1) 가까운 곳에서 돌려서, 질의를 여러 번 하는 게시판 요청이 빨라지게 해요.
+  "placement": { "mode": "smart" },
   "d1_databases": [
     {
       "binding": "DB",

@@ -5,7 +5,8 @@ import { checkPassword, hashPassword, randomId, safeEqual, sign, verify } from '
 const SESSION_COOKIE = 'od_session'
 const VIEWER_COOKIE = 'od_viewer'
 const SESSION_DAYS = 30
-const SETTING_KEYS = ['site', 'theme', 'home']
+// boot: 첫 화면(로딩 화면)에 쓸 색·사이트 이름. 관리자 화면이 디자인에 맞춰 자동으로 저장해요.
+const SETTING_KEYS = ['site', 'theme', 'home', 'boot']
 // 카테고리 페이지 종류: posts(일반 게시판) · thread(타임라인 타래). 새 종류는 여기에 추가해요.
 const PAGE_TYPES = ['posts', 'thread', 'pair', 'rp']
 const MAX_SETTING_BYTES = 512 * 1024
@@ -33,13 +34,72 @@ export default {
       if (url.pathname.startsWith('/files/')) {
         return await serveFile(request, env, url)
       }
-      return env.ASSETS.fetch(request)
+      return await servePage(request, env)
     } catch (err) {
       const status = err.status || 500
       if (status === 500) console.error(err)
       return json({ error: err.message || '서버 오류가 발생했어요.' }, status)
     }
   },
+}
+
+/* ------------------------------------------------------------------ */
+/* 페이지(HTML): 로딩 화면이 처음부터 사이트 색으로 보이게                        */
+/* ------------------------------------------------------------------ */
+
+// 서버가 뜰 때마다 데이터베이스를 읽지 않게 1분 동안 기억해요.
+let bootCache = { at: 0, value: null }
+async function readBoot(env) {
+  if (Date.now() - bootCache.at < 60_000) return bootCache.value
+  let value = null
+  try {
+    await ensureSchema(env.DB)
+    const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'boot'").first()
+    value = parseJson(row?.value, null)
+  } catch {
+    value = null
+  }
+  bootCache = { at: Date.now(), value }
+  return value
+}
+
+const COLOR_RE = /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%]+\))$/i
+function cleanBoot(b) {
+  if (!b || typeof b !== 'object') return null
+  const pal = (p) => {
+    const out = {}
+    for (const k of ['bg', 'accent', 'onAccent', 'text', 'textSub', 'surface']) if (COLOR_RE.test(String(p?.[k] || ''))) out[k] = p[k]
+    return out
+  }
+  return {
+    mode: ['auto', 'light', 'dark'].includes(b.mode) ? b.mode : 'auto',
+    allowToggle: b.allowToggle !== false,
+    light: pal(b.light),
+    dark: pal(b.dark),
+    title: typeof b.title === 'string' ? b.title.slice(0, 120) : '',
+  }
+}
+
+async function servePage(request, env) {
+  if (request.method !== 'GET' || !env.DB) return env.ASSETS.fetch(request)
+  // 조건부 요청(304)을 받으면 예전 색이 담긴 HTML이 그대로 쓰여서, 늘 새로 받아요.
+  const headers = new Headers(request.headers)
+  headers.delete('if-none-match')
+  headers.delete('if-modified-since')
+  const res = await env.ASSETS.fetch(new Request(request.url, { method: 'GET', headers }))
+  if (!(res.headers.get('content-type') || '').includes('text/html')) return res
+  const boot = cleanBoot(await readBoot(env))
+  if (!boot) return res
+  const json = JSON.stringify(boot).replace(/</g, '\\u003c')
+  const out = new HTMLRewriter()
+    .on('head', { element: (el) => el.prepend(`<script>window.__OD_BOOT=${json}</script>`, { html: true }) })
+    .on('title', { element: (el) => boot.title && el.setInnerContent(boot.title) })
+    .transform(res)
+  const h = new Headers(out.headers)
+  h.delete('etag')
+  h.delete('last-modified')
+  h.set('cache-control', 'no-cache')
+  return new Response(out.body, { status: out.status, headers: h })
 }
 
 /* ------------------------------------------------------------------ */
@@ -250,6 +310,7 @@ async function handleApi(request, env, ctx, url) {
       .prepare('INSERT INTO settings (key, value, updated_at) VALUES (?1, ?2, ?3) ON CONFLICT(key) DO UPDATE SET value = ?2, updated_at = ?3')
       .bind(key, text, nowIso())
       .run()
+    if (key === 'boot') bootCache = { at: 0, value: null }
     // 설정에서 빠진 사진(프로필·배너 교체 등)은 다른 곳에서 안 쓰면 지워요.
     ctx.waitUntil(removeUnused(env, difference(beforeKeys, extractKeys(text))))
     return json({ ok: true })
@@ -433,7 +494,8 @@ async function handleApi(request, env, ctx, url) {
 async function readSettings(db) {
   const { results } = await db.prepare('SELECT key, value FROM settings').all()
   const out = {}
-  for (const row of results) out[row.key] = parseJson(row.value, null)
+  // '__'로 시작하는 건 서버가 쓰는 내부 값(표 구조 버전 등)이라 빼요.
+  for (const row of results) if (!row.key.startsWith('__')) out[row.key] = parseJson(row.value, null)
   return out
 }
 
@@ -447,6 +509,7 @@ async function bootstrap(db, admin) {
     site: settings.site || null,
     theme: settings.theme || null,
     home: settings.home || null,
+    boot: settings.boot || null,
     categories,
     stats: { posts: totals?.posts || 0 },
     admin,
@@ -995,7 +1058,7 @@ async function serveFile(request, env, url) {
 
 async function exportAll(db) {
   const [settings, categories, posts, comments] = await Promise.all([
-    db.prepare('SELECT key, value FROM settings').all(),
+    db.prepare("SELECT key, value FROM settings WHERE key NOT LIKE '\\_\\_%' ESCAPE '\\'").all(),
     db.prepare('SELECT * FROM categories ORDER BY sort_order').all(),
     db.prepare('SELECT * FROM posts ORDER BY id').all(),
     db.prepare('SELECT * FROM comments ORDER BY id').all(),

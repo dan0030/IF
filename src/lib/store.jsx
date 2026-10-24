@@ -3,6 +3,7 @@ import { api } from './api.js'
 import { resolveHome, resolveSite, resolveTheme } from './defaults.js'
 import { orderCategories } from './categories.js'
 import { applyTheme, resolveMode, setFavicon } from './theme.js'
+import { readableOn } from './color.js'
 
 const AppContext = createContext(null)
 
@@ -37,8 +38,10 @@ export function AppProvider({ children }) {
   const mode = modeOverride || resolveMode(theme)
 
   useEffect(() => {
+    // 설정을 받기 전에는 기본 테마를 칠하지 않아요. (HTML에 미리 넣은 사이트 색으로 로딩 화면이 보이게)
+    if (!data) return
     applyTheme(theme, mode)
-  }, [theme, mode])
+  }, [theme, mode, !!data])
 
   useEffect(() => {
     const mq = window.matchMedia?.('(prefers-color-scheme: dark)')
@@ -51,6 +54,23 @@ export function AppProvider({ children }) {
   useEffect(() => {
     setFavicon(site.favicon)
   }, [site.favicon])
+
+  // 로딩 화면 색: 관리자로 들어오면 지금 디자인의 색·사이트 이름을 'boot' 설정으로 맞춰둬요.
+  // 서버가 이 값을 HTML에 넣어줘서, 처음 오는 방문자도 로딩 화면부터 사이트 색으로 보여요.
+  const bootJson = useMemo(() => {
+    if (!data?.admin) return null
+    const pal = (p) => ({ bg: p.bg, accent: p.accent, onAccent: readableOn(p.accent, p.accentText || '#fff', p.bg), text: p.text, textSub: p.textSub, surface: p.surface })
+    return JSON.stringify({ mode: savedTheme.mode || 'auto', allowToggle: savedTheme.allowToggle !== false, light: pal(savedTheme.light), dark: pal(savedTheme.dark), title: site.title || '' })
+  }, [data?.admin, savedTheme, site.title])
+  useEffect(() => {
+    if (!bootJson || bootJson === JSON.stringify(data?.boot ?? null)) return
+    const boot = JSON.parse(bootJson)
+    api
+      .saveSetting('boot', boot)
+      .then(() => setData((d) => ({ ...d, boot })))
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bootJson])
 
   // 라이트/다크 전환: 누른 자리에서 원이 퍼지듯 바뀌고, 지원하지 않는 브라우저에서는 색이 부드럽게 섞여요.
   const toggleMode = useCallback(
