@@ -81,6 +81,41 @@ const TEMPLATES = [
   },
 ]
 
+/* ---------------- 동영상 ---------------- */
+
+// 유튜브 시작 시간: t=90, t=1m30s, start=90 → 초
+function youtubeStart(url) {
+  const m = String(url || '').match(/[?&#](?:t|start)=([0-9hms]+)/i)
+  if (!m) return 0
+  const v = m[1]
+  if (/^\d+$/.test(v)) return Number(v)
+  const part = (u) => Number(v.match(new RegExp(`(\\d+)${u}`))?.[1] || 0)
+  return part('h') * 3600 + part('m') * 60 + part('s')
+}
+
+const VIDEO_FILE_RE = /\.(mp4|webm|ogv|ogg|mov|m4v)(?:[?#].*)?$/i
+
+// 붙여넣은 주소 → 본문에 넣을 동영상 HTML. 알아볼 수 없는 주소면 빈 문자열.
+export function videoEmbedHtml(raw) {
+  const url = String(raw || '').trim()
+  if (!url) return ''
+  const yt = youtubeId(url)
+  if (yt) {
+    const start = youtubeStart(url)
+    const vertical = /\/shorts\//i.test(url) ? ' vertical' : ''
+    return `<div class="video-wrap${vertical}" contenteditable="false"><iframe src="https://www.youtube.com/embed/${yt}${start ? `?start=${start}` : ''}" title="YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`
+  }
+  const vimeo = url.match(/vimeo\.com\/(?:video\/)?(\d{5,})/i)
+  if (vimeo) {
+    return `<div class="video-wrap" contenteditable="false"><iframe src="https://player.vimeo.com/video/${vimeo[1]}" title="Vimeo" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`
+  }
+  // 동영상 파일 주소 (이 사이트에 올린 /files/… 주소도)
+  if ((/^https?:\/\//i.test(url) || url.startsWith('/files/')) && VIDEO_FILE_RE.test(url)) {
+    return `<div class="video-wrap file" contenteditable="false"><video src="${escapeHtml(url)}" controls playsinline preload="metadata"></video></div>`
+  }
+  return ''
+}
+
 export function RichEditor({ value, onChange, mode, onModeChange }) {
   const app = useApp()
   const editorRef = useRef(null)
@@ -88,6 +123,7 @@ export function RichEditor({ value, onChange, mode, onModeChange }) {
   const savedRange = useRef(null)
   const [menu, setMenu] = useState(null)
   const [uploading, setUploading] = useState(0)
+  const [videoUploading, setVideoUploading] = useState(false)
   const [imgEdit, setImgEdit] = useState(null) // { src, file, name, target }
   const selectedImg = useRef(null)
   const [imgSel, setImgSel] = useState(null) // 지금 골라진 사진 (사진 도구 막대를 띄우려고)
@@ -325,16 +361,39 @@ export function RichEditor({ value, onChange, mode, onModeChange }) {
     else insertHtml(`<a href="${escapeHtml(url)}">${escapeHtml(url)}</a>`)
   }
 
-  function addYoutube() {
-    const url = window.prompt('유튜브 주소를 붙여넣어 주세요')
-    const id = youtubeId(url)
-    if (!id) {
-      if (url) app.showToast('유튜브 주소를 알아보지 못했어요.')
+  // 유튜브(일반·쇼츠·라이브, 시작 시간 포함)·Vimeo·동영상 파일 주소를 알아봐서 넣어요.
+  function addVideoLink() {
+    const url = window.prompt('유튜브 · Vimeo · 동영상 파일(mp4·webm) 주소를 붙여넣어 주세요')
+    if (!url) return
+    const html = videoEmbedHtml(url)
+    if (!html) {
+      app.showToast('동영상 주소를 알아보지 못했어요. 유튜브·Vimeo 주소나 .mp4·.webm 파일 주소를 넣어주세요.')
       return
     }
-    insertBlock(
-      `<div class="video-wrap"><iframe src="https://www.youtube.com/embed/${id}" title="YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div><p><br></p>`,
-    )
+    insertBlock(`${html}<p><br></p>`)
+  }
+
+  // 동영상 파일(mp4·webm)을 올려서 넣어요. 파일은 사진처럼 R2 저장소에 들어가요.
+  async function uploadVideo() {
+    const [file] = await pickFile('video/mp4,video/webm,.mp4,.webm,.m4v', false)
+    if (!file) return
+    if (!/^video\/(mp4|webm)$/.test(file.type) && !/\.(mp4|webm|m4v)$/i.test(file.name)) {
+      app.showToast('mp4 · webm 동영상만 올릴 수 있어요.')
+      return
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      app.showToast(`동영상이 너무 커요. (${(file.size / 1024 / 1024).toFixed(1)}MB · 최대 25MB) 더 긴 영상은 유튜브에 올리고 주소로 넣어주세요.`)
+      return
+    }
+    setVideoUploading(true)
+    try {
+      const { url } = await api.upload(file)
+      insertBlock(`${videoEmbedHtml(url) || `<p><a href="${escapeHtml(url)}">${escapeHtml(file.name)}</a></p>`}<p><br></p>`)
+    } catch (e) {
+      app.showToast(e.message)
+    } finally {
+      setVideoUploading(false)
+    }
   }
 
   const Btn = ({ icon, label, onClick, active, children }) => (
@@ -544,10 +603,16 @@ export function RichEditor({ value, onChange, mode, onModeChange }) {
                     {g.items.map((t) => (
                       <MI key={t.label} icon={t.icon} label={t.label} onClick={() => insertBlock(t.html)} />
                     ))}
-                    {g.group === '기타' && <MI icon="fa-brands fa-youtube" label="유튜브" onClick={addYoutube} />}
                   </div>
                 </div>
               ))}
+              <div className="tb-menu-group">
+                <span className="tb-menu-label">동영상</span>
+                <div className="tb-menu-items">
+                  <MI icon="fa-brands fa-youtube" label="유튜브 · 동영상 주소로 넣기" onClick={addVideoLink} />
+                  <MI icon="fa-solid fa-film" label="동영상 파일 올리기 (25MB까지)" onClick={uploadVideo} />
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -622,9 +687,9 @@ export function RichEditor({ value, onChange, mode, onModeChange }) {
           onApply={applyImageEdit}
         />
       )}
-      {uploading > 0 && (
+      {(uploading > 0 || videoUploading) && (
         <div className="upload-status">
-          <i className="fa-solid fa-spinner fa-spin" /> 사진 {uploading}장 올리는 중...
+          <i className="fa-solid fa-spinner fa-spin" /> {videoUploading ? '동영상 올리는 중...' : `사진 ${uploading}장 올리는 중...`}
         </div>
       )}
     </div>

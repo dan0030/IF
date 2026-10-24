@@ -963,6 +963,22 @@
   height: 100%;
   border: 0;
 }
+/* 유튜브 쇼츠처럼 세로 영상 */
+.video-wrap.vertical {
+  aspect-ratio: 9 / 16;
+  max-width: min(100%, 360px);
+  margin-inline: auto;
+}
+/* 올린 동영상 파일: 영상 원래 비율대로 */
+.video-wrap.file {
+  aspect-ratio: auto;
+}
+.video-wrap.file video {
+  display: block;
+  width: 100%;
+  max-height: 80vh;
+  background: #000;
+}
 .lyrics {
   white-space: pre-wrap;
   text-align: center;
