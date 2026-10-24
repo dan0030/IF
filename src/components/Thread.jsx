@@ -224,8 +224,12 @@ function FeedItem({ post }) {
           )}
           <div className="tw-actions">
             <a href={`/post/${post.id}`} className={post.replyCount ? 'accent' : ''}>
-              <i className="fa-solid fa-diagram-next" /> {post.replyCount ? `타래 ${post.replyCount}개 이어보기` : '타래 보기'}
+              <i className="fa-solid fa-diagram-next" /> 타래 보기
             </a>
+            {/* 이 글 아래 이어 단 타래 글 수 */}
+            <span className={`tw-reply-count ${post.replyCount ? 'has' : ''}`} title={`이 타래에 이어 단 글 ${post.replyCount || 0}개`} aria-label={`이어 단 글 ${post.replyCount || 0}개`}>
+              <i className="fa-solid fa-reply fa-flip-vertical" /> {post.replyCount || 0}
+            </span>
             {post.commentCount > 0 && (
               <span>
                 <i className="fa-regular fa-comment" /> {post.commentCount}
