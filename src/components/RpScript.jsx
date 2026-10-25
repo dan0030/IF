@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { swapNames, useApp } from '../lib/store.jsx'
 import { uid } from '../lib/format.js'
-import { Sheet } from './ui.jsx'
+import { Segmented, Sheet } from './ui.jsx'
 
 // 역극 대본: '대사'(캐릭터 두상 + 말풍선), '지문'(소설체 행동 묘사), '구분선'(장면 전환) 블록을 차례로 쌓아요.
 // 저장은 아래 모양의 HTML로 해서, 검색·백업·요약이 일반 글처럼 동작해요.
 //   <div class="rp-script">
 //     <div class="rp-say" data-char="키" data-ava="/files/…"><b class="rp-who">이름</b><div class="rp-text">대사<br>…</div></div>
 //     <div class="rp-act"><p>지문</p><p>…</p></div>
-//     <div class="rp-hr"><span>장면 전환 (선택)</span></div>
+//     <div class="rp-hr" data-kind="stars" data-color="#…" data-gap="l" data-width="mid"><span>장면 전환 (선택)</span></div>
 //   </div>
 // 두상 이미지는 볼 때 페이지 설정의 최신 이미지로 다시 그려요. (data-ava는 예전 이미지 대신용)
 //
@@ -87,6 +87,54 @@ function displayHtml(text, site) {
   return swapNames(inlineHtml(text || '').replace(/\n/g, '<br>'), site)
 }
 
+/* ---------------- 구분선 모양 ---------------- */
+
+// line: 선으로 나누는 모양 (가운데 글은 선 사이에), mark: 기호로 나누는 모양 (가운데 글은 기호 아래에)
+export const HR_KINDS = [
+  { value: 'fade', label: '흐린 선', line: true },
+  { value: 'solid', label: '실선', line: true },
+  { value: 'dashed', label: '점선', line: true },
+  { value: 'dotted', label: '도트', line: true },
+  { value: 'double', label: '이중선', line: true },
+  { value: 'dots', label: '· · ·', mark: '·   ·   ·' },
+  { value: 'stars', label: '✦ ✦ ✦', mark: '✦   ✦   ✦' },
+  { value: 'asterism', label: '⁂', mark: '⁂' },
+  { value: 'hearts', label: '♡ ♡ ♡', mark: '♡   ♡   ♡' },
+  { value: 'blank', label: '빈 여백' },
+  { value: 'custom', label: '직접 입력' },
+]
+const HR_MAP = Object.fromEntries(HR_KINDS.map((k) => [k.value, k]))
+const HR_COLOR_RE = /^(#[0-9a-f]{3,8}|accent)$/i
+
+// 저장된 값이 이상해도 늘 쓸 수 있는 구분선 설정으로 맞춰요.
+function hrOpts(b) {
+  return {
+    kind: HR_MAP[b?.kind] ? b.kind : 'fade',
+    mark: String(b?.mark || '').slice(0, 30),
+    color: HR_COLOR_RE.test(b?.color || '') ? b.color : '',
+    gap: ['s', 'm', 'l'].includes(b?.gap) ? b.gap : 'm',
+    width: ['short', 'mid', 'full'].includes(b?.width) ? b.width : 'full',
+  }
+}
+const hrColorCss = (c) => (c === 'accent' ? 'var(--accent)' : c)
+
+// 새 구분선은 마지막으로 쓴 모양으로 시작해요.
+function lastHr() {
+  try {
+    const { kind, mark, color, gap, width } = hrOpts(JSON.parse(localStorage.getItem('od-rp-hr') || '{}'))
+    return { kind, mark, color, gap, width }
+  } catch {
+    return {}
+  }
+}
+function rememberHr(b) {
+  try {
+    localStorage.setItem('od-rp-hr', JSON.stringify(hrOpts(b)))
+  } catch {
+    // 저장소를 못 쓰면 기본 모양으로
+  }
+}
+
 export function scriptToHtml(blocks, chars) {
   const map = Object.fromEntries((chars || []).map((c) => [c.key, c]))
   const body = blocks
@@ -94,7 +142,17 @@ export function scriptToHtml(blocks, chars) {
     .map((b) => {
       if (b.type === 'hr') {
         const label = (b.text || '').trim()
-        return `<div class="rp-hr">${label ? `<span>${inlineHtml(label)}</span>` : ''}</div>`
+        const o = hrOpts(b)
+        const attrs = [
+          o.kind !== 'fade' && `data-kind="${o.kind}"`,
+          o.kind === 'custom' && o.mark && `data-mark="${esc(o.mark)}"`,
+          o.color && `data-color="${esc(o.color)}"`,
+          o.gap !== 'm' && `data-gap="${o.gap}"`,
+          o.width !== 'full' && `data-width="${o.width}"`,
+        ]
+          .filter(Boolean)
+          .join(' ')
+        return `<div class="rp-hr"${attrs ? ` ${attrs}` : ''}>${label ? `<span>${inlineHtml(label)}</span>` : ''}</div>`
       }
       if (b.type === 'say') {
         const c = map[b.char] || {}
@@ -130,7 +188,8 @@ export function parseScript(html) {
         return { id: uid('b'), type: 'say', char: el.dataset.char || '', name: textOf(el.querySelector('.rp-who')), ava: el.dataset.ava || '', text: markupOf(el.querySelector('.rp-text')) }
       }
       if (el.classList.contains('rp-hr')) {
-        return { id: uid('b'), type: 'hr', text: markupOf(el.querySelector('span')) }
+        const d = el.dataset
+        return { id: uid('b'), type: 'hr', text: markupOf(el.querySelector('span')), ...hrOpts({ kind: d.kind, mark: d.mark, color: d.color, gap: d.gap, width: d.width }) }
       }
       if (el.classList.contains('rp-act')) {
         const ps = [...el.querySelectorAll('p')]
@@ -173,7 +232,7 @@ export function RpScriptView({ html, chars }) {
     <div className="rp-script-view">
       {blocks.map((b) =>
         b.type === 'hr' ? (
-          <Divider key={b.id} html={b.text ? displayHtml(b.text, site) : ''} />
+          <Divider key={b.id} b={b} html={b.text ? displayHtml(b.text, site) : ''} />
         ) : b.type === 'say' ? (
           <SayLine key={b.id} char={map[b.char] || { name: b.name, avatar: b.ava }} text={b.text} />
         ) : (
@@ -188,11 +247,96 @@ export function RpScriptView({ html, chars }) {
   )
 }
 
-// 장면을 나누는 구분선. 글을 적으면 선 가운데에 보여요.
-function Divider({ html }) {
+// 장면을 나누는 구분선. 선 모양은 글을 선 가운데에, 기호 모양은 글을 기호 아래에 보여줘요.
+function Divider({ b, html }) {
+  const o = hrOpts(b)
+  const def = HR_MAP[o.kind]
+  const cap = html && o.kind !== 'blank' ? <span className="rp-hr-cap" dangerouslySetInnerHTML={{ __html: html }} /> : null
   return (
-    <div className={`rp-hr ${html ? 'has-text' : ''}`} role="separator">
-      {html ? <span dangerouslySetInnerHTML={{ __html: html }} /> : null}
+    <div
+      className={`rp-hr kind-${o.kind} gap-${o.gap} w-${o.width} ${def.line ? 'is-line' : o.kind === 'blank' ? 'is-blank' : 'is-mark'} ${cap ? 'has-text' : ''}`}
+      style={o.color ? { '--hr-c': hrColorCss(o.color) } : undefined}
+      role="separator"
+    >
+      {!def.line && o.kind !== 'blank' && <span className="rp-hr-mark">{o.kind === 'custom' ? o.mark || '◇' : def.mark}</span>}
+      {cap}
+    </div>
+  )
+}
+
+// 구분선 블록 편집: 모양 고르기 + (직접 입력 기호) + 가운데 글 + 꾸미기(색·간격·길이) + 미리보기
+function HrEditor({ b, update, chars, autoFocus }) {
+  const { site } = useApp()
+  const [more, setMore] = useState(false)
+  const o = hrOpts(b)
+  const def = HR_MAP[o.kind]
+  const set = (patch) => {
+    update(b.id, patch)
+    rememberHr({ ...o, ...patch })
+  }
+  const charColors = (chars || []).filter((c) => /^#[0-9a-f]{3,8}$/i.test(c.color || ''))
+  const colors = [{ value: '', label: '기본' }, { value: 'accent', label: '포인트 색', css: 'var(--accent)' }, ...charColors.map((c) => ({ value: c.color, label: c.name, css: c.color }))]
+  return (
+    <div className="rp-block-hr">
+      <span className="rp-block-label">
+        <i className="fa-solid fa-grip-lines" /> 구분선
+      </span>
+      <div className="rp-hr-kinds" role="radiogroup" aria-label="구분선 모양">
+        {HR_KINDS.map((k) => (
+          <button type="button" key={k.value} role="radio" aria-checked={o.kind === k.value} className={o.kind === k.value ? 'active' : ''} onClick={() => set({ kind: k.value })} title={k.label}>
+            {k.line ? <i className={`rp-hr-chip-line kind-${k.value}`} aria-hidden="true" /> : null}
+            <span>{k.line ? k.label : k.value === 'blank' ? '빈 여백' : k.value === 'custom' ? '직접 입력' : k.label}</span>
+          </button>
+        ))}
+      </div>
+      {o.kind === 'custom' && (
+        <input className="rp-hr-input" value={b.mark || ''} onChange={(e) => set({ mark: e.target.value })} placeholder="넣을 기호나 글 · 예: ✿ ─── ✿ / ◇◆◇ / ♪ ♪ ♪" aria-label="구분선 기호" maxLength={30} />
+      )}
+      {o.kind !== 'blank' && (
+        <input
+          className="rp-hr-input"
+          value={b.text}
+          onChange={(e) => update(b.id, { text: e.target.value })}
+          placeholder={def.line ? '선 가운데에 넣을 글 (선택) · 예: 장면 전환, 다음 날 아침' : '기호 아래에 넣을 글 (선택) · 예: 장면 전환'}
+          aria-label="구분선 글"
+          maxLength={60}
+          autoFocus={autoFocus}
+        />
+      )}
+      <button type="button" className={`rp-hr-more ${more ? 'active' : ''}`} onClick={() => setMore((v) => !v)} aria-expanded={more}>
+        <i className="fa-solid fa-sliders" /> 꾸미기 (색 · 간격{def.line ? ' · 길이' : ''})
+      </button>
+      {more && (
+        <div className="rp-hr-options">
+          <div className="rp-hr-option">
+            <span>색</span>
+            <div className="rp-hr-colors">
+              {colors.map((c) => (
+                <button type="button" key={c.value || 'default'} className={o.color === c.value ? 'active' : ''} onClick={() => set({ color: c.value })} title={c.label} aria-label={`색: ${c.label}`}>
+                  <i style={c.css ? { background: c.css } : undefined} className={c.value ? '' : 'is-default'} />
+                </button>
+              ))}
+              <label className={`rp-hr-custom-color ${o.color && !colors.some((c) => c.value === o.color) ? 'active' : ''}`} title="직접 고르기">
+                <i className="fa-solid fa-eye-dropper" />
+                <input type="color" value={/^#[0-9a-f]{6}$/i.test(o.color) ? o.color : '#888888'} onChange={(e) => set({ color: e.target.value })} aria-label="색 직접 고르기" />
+              </label>
+            </div>
+          </div>
+          <div className="rp-hr-option">
+            <span>위아래 간격</span>
+            <Segmented size="small" value={o.gap} onChange={(v) => set({ gap: v })} options={[{ value: 's', label: '좁게' }, { value: 'm', label: '보통' }, { value: 'l', label: '넓게' }]} />
+          </div>
+          {def.line && (
+            <div className="rp-hr-option">
+              <span>선 길이</span>
+              <Segmented size="small" value={o.width} onChange={(v) => set({ width: v })} options={[{ value: 'short', label: '짧게' }, { value: 'mid', label: '중간' }, { value: 'full', label: '꽉 차게' }]} />
+            </div>
+          )}
+        </div>
+      )}
+      <div className="rp-hr-preview" aria-label="미리보기">
+        <Divider b={o} html={b.text ? displayHtml(b.text, site) : ''} />
+      </div>
     </div>
   )
 }
@@ -420,20 +564,7 @@ export function RpScriptEditor({ value, onChange, chars, cast, quote, onQuote })
       {blocks.map((b, i) => (
         <div key={b.id} className={`rp-block ${b.type}`}>
           {b.type === 'hr' ? (
-            <div className="rp-block-hr">
-              <span className="rp-block-label">
-                <i className="fa-solid fa-grip-lines" /> 구분선
-              </span>
-              <input
-                className="rp-hr-input"
-                value={b.text}
-                onChange={(e) => update(b.id, { text: e.target.value })}
-                placeholder="선 가운데에 넣을 글 (선택) · 예: 장면 전환, 다음 날 아침"
-                aria-label="구분선 글"
-                maxLength={60}
-                autoFocus={focusId === b.id}
-              />
-            </div>
+            <HrEditor b={b} update={update} chars={chars} autoFocus={focusId === b.id} />
           ) : b.type === 'say' ? (
             <div className="rp-block-say" style={map[b.char]?.color ? { '--cc': map[b.char].color } : undefined}>
               <div className="rp-speaker-pick" role="radiogroup" aria-label="말하는 사람">
@@ -489,7 +620,7 @@ export function RpScriptEditor({ value, onChange, chars, cast, quote, onQuote })
             <button type="button" onClick={() => insert(i + 1, { type: 'act' })} title="아래에 지문 넣기" aria-label="아래에 지문 넣기">
               <i className="fa-solid fa-feather" />
             </button>
-            <button type="button" onClick={() => insert(i + 1, { type: 'hr' })} title="아래에 구분선 넣기" aria-label="아래에 구분선 넣기">
+            <button type="button" onClick={() => insert(i + 1, { type: 'hr', ...lastHr() })} title="아래에 구분선 넣기" aria-label="아래에 구분선 넣기">
               <i className="fa-solid fa-grip-lines" />
             </button>
             <button type="button" className="danger" onClick={() => remove(b.id)} aria-label="블록 지우기">
@@ -508,7 +639,7 @@ export function RpScriptEditor({ value, onChange, chars, cast, quote, onQuote })
         <button type="button" className="rp-add-btn act" onClick={() => insert(blocks.length, { type: 'act' })}>
           <i className="fa-solid fa-feather" /> 지문
         </button>
-        <button type="button" className="rp-add-btn act" onClick={() => insert(blocks.length, { type: 'hr' })}>
+        <button type="button" className="rp-add-btn act" onClick={() => insert(blocks.length, { type: 'hr', ...lastHr() })}>
           <i className="fa-solid fa-grip-lines" /> 구분선
         </button>
       </div>
@@ -540,8 +671,13 @@ function ImportSheet({ chars, onClose, onImport }) {
         if (last?.type === 'act' && !last.text.endsWith('\n\n')) last.text += '\n\n'
         continue
       }
-      if (/^([-*=_~─━·•]\s*){3,}$/.test(line)) {
-        out.push({ id: uid('b'), type: 'hr', text: '' })
+      // --- 같은 줄은 선 구분선, * * * · ♡ ♡ ♡ 같은 기호 줄은 그 기호 그대로 구분선으로
+      if (/^([-=_─━]\s*){3,}$/.test(line)) {
+        out.push({ id: uid('b'), type: 'hr', text: '', kind: 'fade' })
+        continue
+      }
+      if (/^([*~·•✦✧★☆♡♥❀✿◇◆○●†※⁂]\s*){1,9}$/.test(line) && line.replace(/\s/g, '').length >= (line.includes('⁂') || line.includes('※') ? 1 : 3)) {
+        out.push({ id: uid('b'), type: 'hr', text: '', kind: 'custom', mark: line.slice(0, 30) })
         continue
       }
       const m = line.match(/^([^:：「」"]{1,20})\s*[:：]\s*(.+)$/) || line.match(/^([^「」]{1,20})\s*「(.+)」$/)
