@@ -798,14 +798,18 @@ async function getPost(db, id, admin, unlocked) {
   }
 
   const vis = admin ? '' : "AND visibility != 'private'"
+  // 이전 글·다음 글은 이 글과 같은 카테고리 안에서만 찾아요. 하위 카테고리 글이면 그 하위 카테고리 안에서만,
+  // 상위 카테고리에 바로 넣은 글이면 그 상위 카테고리 글끼리, 카테고리가 없는 글은 카테고리 없는 글끼리.
+  const sameCat = row.category_id ? 'AND category_id = ?' : 'AND category_id IS NULL'
+  const catBind = row.category_id ? [row.category_id] : []
   const [prev, next, related] = await Promise.all([
     db
-      .prepare(`SELECT id, title FROM posts WHERE type = ? ${vis} AND (published_at < ? OR (published_at = ? AND id < ?)) ORDER BY published_at DESC, id DESC LIMIT 1`)
-      .bind(row.type, row.published_at, row.published_at, id)
+      .prepare(`SELECT id, title FROM posts WHERE type = ? ${sameCat} ${vis} AND (published_at < ? OR (published_at = ? AND id < ?)) ORDER BY published_at DESC, id DESC LIMIT 1`)
+      .bind(row.type, ...catBind, row.published_at, row.published_at, id)
       .first(),
     db
-      .prepare(`SELECT id, title FROM posts WHERE type = ? ${vis} AND (published_at > ? OR (published_at = ? AND id > ?)) ORDER BY published_at ASC, id ASC LIMIT 1`)
-      .bind(row.type, row.published_at, row.published_at, id)
+      .prepare(`SELECT id, title FROM posts WHERE type = ? ${sameCat} ${vis} AND (published_at > ? OR (published_at = ? AND id > ?)) ORDER BY published_at ASC, id ASC LIMIT 1`)
+      .bind(row.type, ...catBind, row.published_at, row.published_at, id)
       .first(),
     row.category_id
       ? db
