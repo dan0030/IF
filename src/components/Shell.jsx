@@ -46,7 +46,7 @@ export function Shell({ children }) {
         </main>
         <Footer />
         {nav !== 'drawer' && <BottomNav path={loc.path} />}
-        <ScrollTopButton />
+        <ScrollButtons />
         {app.toast && (
           <div className="toast" key={app.toast.id} role="status">
             {app.toast.message}
@@ -421,30 +421,47 @@ function BrowserFrame({ on, path, showUrl, onMenu, children }) {
 }
 
 // 스크롤바 대신 쓰는 '맨 위로' 버튼. 조금 내려가면 창 오른쪽 아래에 나타나요. (휴대폰에서는 숨김)
-function ScrollTopButton() {
-  const [show, setShow] = useState(false)
+function ScrollButtons() {
+  const loc = useLocation()
+  const [up, setUp] = useState(false)
+  const [down, setDown] = useState(false)
   useEffect(() => {
-    const on = () => setShow(scrollTop() > 320)
+    const on = () => {
+      const el = scrollRoot()
+      const top = scrollTop()
+      const max = el ? el.scrollHeight - el.clientHeight : document.documentElement.scrollHeight - window.innerHeight
+      setUp(top > 320)
+      setDown(max - top > 320)
+    }
     on()
     // 사이트 배경 이미지를 쓸 때는 #root가 스크롤되므로, 캡처 단계로 모든 스크롤을 들어요.
     window.addEventListener('scroll', on, { capture: true, passive: true })
-    return () => window.removeEventListener('scroll', on, { capture: true })
-  }, [])
-  return (
-    <button
-      type="button"
-      className={`scroll-top-btn ${show ? 'show' : ''}`}
-      onClick={() => {
-        const el = scrollRoot()
-        const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-        ;(el || window).scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' })
-      }}
-      aria-label="맨 위로"
-      title="맨 위로"
-      tabIndex={show ? 0 : -1}
-      aria-hidden={!show}
-    >
-      <i className="fa-solid fa-arrow-up" />
+    window.addEventListener('resize', on)
+    // 글·사진이 나중에 불러와져 페이지가 길어져도 맞춰요.
+    const ro = new ResizeObserver(on)
+    const main = document.getElementById('main')
+    if (main) ro.observe(main)
+    return () => {
+      window.removeEventListener('scroll', on, { capture: true })
+      window.removeEventListener('resize', on)
+      ro.disconnect()
+    }
+  }, [loc.path])
+  const go = (where) => {
+    const el = scrollRoot()
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const top = where === 'top' ? 0 : el ? el.scrollHeight : document.documentElement.scrollHeight
+    ;(el || window).scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' })
+  }
+  const Btn = ({ show, where, icon, label }) => (
+    <button type="button" className={`scroll-top-btn ${show ? 'show' : ''}`} onClick={() => go(where)} aria-label={label} title={label} tabIndex={show ? 0 : -1} aria-hidden={!show}>
+      <i className={icon} />
     </button>
+  )
+  return (
+    <div className={`scroll-btns ${up || down ? 'show' : ''}`}>
+      <Btn show={up} where="top" icon="fa-solid fa-arrow-up" label="맨 위로" />
+      <Btn show={down} where="bottom" icon="fa-solid fa-arrow-down" label="맨 아래로" />
+    </div>
   )
 }
