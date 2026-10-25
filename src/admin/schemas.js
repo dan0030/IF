@@ -33,6 +33,7 @@ export const SITE_FIELDS = [
 
   { type: 'heading', label: '메뉴' },
   { key: 'menu.archive', label: '서랍 메뉴에 "전체 기록" 보이기', type: 'toggle' },
+  { key: 'menu.counts', label: '카테고리 옆 글 개수 보이기', type: 'toggle', help: '끄면 서랍 메뉴의 모든 카테고리에서 글 개수를 숨겨요. 카테고리마다 따로 숨기려면 관리 › 카테고리에서 정해요.' },
   { key: 'menu.notice', label: '공지사항 아이콘', type: 'toggle' },
   { key: 'menu.guestbook', label: '방명록 아이콘', type: 'toggle' },
   { key: 'menu.tags', label: '태그 아이콘', type: 'toggle' },

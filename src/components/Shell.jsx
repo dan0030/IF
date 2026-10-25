@@ -157,6 +157,9 @@ function Drawer({ open, onClose }) {
   }, [open])
 
   const roots = app.categories.filter((c) => !c.parent_id)
+  // 글 개수: 관리 › 사이트 › 메뉴에서 전체를 끄거나, 관리 › 카테고리에서 카테고리마다 숨길 수 있어요.
+  const showCounts = site.menu.counts !== false
+  const countOf = (c, n) => (showCounts && !c.hide_count ? <span className="cat-count">{n}</span> : null)
   const children = (id) => app.categories.filter((c) => c.parent_id === id)
   const links = (site.links || []).filter((l) => l.url && l.url !== '#')
 
@@ -219,7 +222,7 @@ function Drawer({ open, onClose }) {
               <a href="/archive" className="cat-link">
                 <i className="cat-icon fa-solid fa-layer-group" />
                 <span>전체 기록</span>
-                <span className="cat-count">{app.stats.posts || 0}</span>
+                {showCounts && <span className="cat-count">{app.stats.posts || 0}</span>}
               </a>
             )}
             {roots.map((c) => {
@@ -231,7 +234,7 @@ function Drawer({ open, onClose }) {
                     <i className={`cat-icon ${c.icon || 'fa-solid fa-folder'}`} />
                     <span>{c.name}</span>
                     {isRecent(c.latest) && <span className="new-badge">N</span>}
-                    <span className="cat-count">{c.count + kids.reduce((s, k) => s + k.count, 0)}</span>
+                    {countOf(c, c.count + kids.reduce((s, k) => s + k.count, 0))}
                   </a>
                   {kids.length > 0 && (
                     <>
@@ -250,7 +253,7 @@ function Drawer({ open, onClose }) {
                             <i className={`cat-icon ${k.icon || 'fa-regular fa-folder'}`} />
                             <span>{k.name}</span>
                             {isRecent(k.latest) && <span className="new-badge">N</span>}
-                            <span className="cat-count">{k.count}</span>
+                            {countOf(k, k.count)}
                           </a>
                         ))}
                       </div>

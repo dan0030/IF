@@ -22,7 +22,7 @@ export const DEFAULT_SITE = {
   bgmLabel: 'Now playing',
   bgmPreload: true,
   bgmAutoplay: false,
-  menu: { archive: true, calendar: true, notice: true, guestbook: true, tags: true, banners: true },
+  menu: { archive: true, calendar: true, notice: true, guestbook: true, tags: true, banners: true, counts: true },
   banners: [],
   myBanner: { image: '', url: '', alt: '', note: '' },
   bannerIntro: '함께해 주시는 분들의 배너예요.',

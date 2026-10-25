@@ -79,11 +79,13 @@ const MIGRATIONS = [
   `ALTER TABLE categories ADD COLUMN config TEXT`,
   // R2로 아직 안 옮긴 파일만 빠르게 찾게 (예전엔 요청마다 files 표 전체를 훑었어요)
   `CREATE INDEX IF NOT EXISTS idx_files_pending ON files (key) WHERE data IS NOT NULL`,
+  // 서랍 메뉴에서 이 카테고리의 글 개수를 숨길지
+  `ALTER TABLE categories ADD COLUMN hide_count INTEGER NOT NULL DEFAULT 0`,
 ]
 
 // 표 구조를 바꾸면 이 숫자를 1 올려요. 데이터베이스에 적힌 숫자가 같으면 서버가 새로 뜰 때
 // 표 검사(CREATE·ALTER 여러 번)를 건너뛰고 질의 한 번으로 끝내요. (첫 접속이 느리던 원인)
-const SCHEMA_VERSION = 2
+const SCHEMA_VERSION = 3
 
 let ready = null
 

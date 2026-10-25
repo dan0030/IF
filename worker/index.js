@@ -558,6 +558,7 @@ async function saveCategories(db, list) {
     parentKey: c.parentKey != null ? String(c.parentKey) : c.parent_id != null ? String(c.parent_id) : null,
     sort_order: i,
     hidden: c.hidden ? 1 : 0,
+    hide_count: c.hide_count ? 1 : 0,
   }))
 
   const keepIds = prepared.filter((c) => c.id).map((c) => c.id)
@@ -588,8 +589,8 @@ async function saveCategories(db, list) {
     prepared.map((c) => {
       const parentId = c.parentKey && keyToId.has(c.parentKey) && keyToId.get(c.parentKey) !== c.id ? keyToId.get(c.parentKey) : null
       return db
-        .prepare('UPDATE categories SET name = ?, slug = ?, icon = ?, description = ?, list_style = ?, page_type = ?, parent_id = ?, sort_order = ?, hidden = ? WHERE id = ?')
-        .bind(c.name, c.slug, c.icon, c.description, c.list_style, c.page_type, parentId, c.sort_order, c.hidden, c.id)
+        .prepare('UPDATE categories SET name = ?, slug = ?, icon = ?, description = ?, list_style = ?, page_type = ?, parent_id = ?, sort_order = ?, hidden = ?, hide_count = ? WHERE id = ?')
+        .bind(c.name, c.slug, c.icon, c.description, c.list_style, c.page_type, parentId, c.sort_order, c.hidden, c.hide_count, c.id)
     }),
   )
   return removedKeys
@@ -1092,7 +1093,7 @@ async function importAll(db, data) {
     return db.prepare(`INSERT INTO ${table} (${cols.join(',')}) VALUES (${cols.map(() => '?').join(',')})`).bind(...cols.map((c) => row[c] ?? null))
   }
   for (const s of data.settings || []) if (SETTING_KEYS.includes(s.key)) stmts.push(insert('settings', s, ['key', 'value']))
-  for (const c of data.categories || []) stmts.push(insert('categories', c, ['id', 'name', 'slug', 'icon', 'description', 'list_style', 'page_type', 'parent_id', 'sort_order', 'hidden', 'config']))
+  for (const c of data.categories || []) stmts.push(insert('categories', c, ['id', 'name', 'slug', 'icon', 'description', 'list_style', 'page_type', 'parent_id', 'sort_order', 'hidden', 'hide_count', 'config']))
   for (const p of data.posts || [])
     stmts.push(
       insert('posts', p, [

@@ -497,6 +497,10 @@ function CategoriesTab() {
               <input type="checkbox" checked={!!c.hidden} onChange={(e) => update(i, { hidden: e.target.checked ? 1 : 0 })} />
               <span>방문자에게 숨기기</span>
             </label>
+            <label className="check">
+              <input type="checkbox" checked={!!c.hide_count} onChange={(e) => update(i, { hide_count: e.target.checked ? 1 : 0 })} />
+              <span>서랍 메뉴에서 이 카테고리의 글 개수 숨기기</span>
+            </label>
           </div>
         )}
         {list.filter((k) => k.parentKey === c.key).map((k) => renderItem(k, depth + 1))}
