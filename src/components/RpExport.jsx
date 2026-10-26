@@ -5,6 +5,7 @@ import { HR_KINDS, hrOptsOf, inlineHtml, parseScript } from './RpScript.jsx'
 
 // 역극 로그를 다른 곳에 옮길 수 있게 바꿔줘요.
 //  - 소설: 대사는 "큰따옴표" 안에, 지문은 문단으로, 구분선은 ***. 꾸밈은 빼고 글자만.
+//  - 채팅 로그: AI 채팅 로그처럼 대사는 '이름: 대사', 서술 지문은 *지문*, 구분선은 ***.
 //  - HTML: 지금 보이는 모습(두상·말풍선·지문·구분선·꾸밈) 그대로. 다른 사이트에는 이 사이트의 CSS가 없으니
 //    모양을 전부 태그 안(style="…")에 적어요.
 
@@ -47,6 +48,34 @@ export function scriptToNovel(html, site, title) {
       for (const p of String(b.text || '').split(/\n{2,}/)) {
         const t = namesOf(plainOf(p), site).trim()
         if (t) out.push(t)
+      }
+    }
+  }
+  return out.join('\n\n')
+}
+
+export function scriptToTranscript(html, chars, site, title) {
+  const map = Object.fromEntries((chars || []).map((c) => [c.key, c]))
+  const out = []
+  if (title) out.push(title)
+  for (const b of parseScript(html)) {
+    if (b.type === 'hr') {
+      out.push('***')
+      const cap = plainOf(b.text).trim()
+      if (cap) out.push(namesOf(cap, site))
+    } else if (b.type === 'say') {
+      const t = namesOf(plainOf(b.text), site).trim()
+      const name = namesOf(map[b.char]?.name || b.name || '', site).trim()
+      if (t) out.push(name ? `${name}: ${t}` : t)
+    } else {
+      // 서술 지문은 줄마다 *별표*로 감싸요. (이미 감싼 줄은 그대로)
+      for (const p of String(b.text || '').split(/\n{2,}/)) {
+        const lines = namesOf(plainOf(p), site)
+          .split('\n')
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .map((l) => (/^\*[^*][\s\S]*\*$/.test(l) ? l : `*${l.replace(/^\*+|\*+$/g, '')}*`))
+        if (lines.length) out.push(lines.join('\n'))
       }
     }
   }
@@ -159,13 +188,20 @@ export function RpExportSheet({ kind, post, chars, onClose }) {
   const [withBg, setWithBg] = useState(true)
   const title = withTitle ? post.title : ''
   const text = useMemo(
-    () => (kind === 'novel' ? scriptToNovel(post.content, app.site, title) : scriptToHtmlCode(post.content, chars, app.site, title, currentColors(), withBg)),
+    () =>
+      kind === 'novel'
+        ? scriptToNovel(post.content, app.site, title)
+        : kind === 'script'
+          ? scriptToTranscript(post.content, chars, app.site, title)
+          : scriptToHtmlCode(post.content, chars, app.site, title, currentColors(), withBg),
     [kind, post.content, chars, app.site, title, withBg],
   )
+  const NAMES = { novel: ['소설로 변환', '소설 글'], script: ['채팅 로그로 변환', '채팅 로그'], html: ['HTML 코드로 변환', 'HTML 코드'] }
+  const [sheetTitle, label] = NAMES[kind] || NAMES.html
   async function copy() {
     try {
       await navigator.clipboard.writeText(text)
-      app.showToast(kind === 'novel' ? '소설 글을 복사했어요.' : 'HTML 코드를 복사했어요.')
+      app.showToast(`${label}을(를) 복사했어요.`)
     } catch {
       // 클립보드를 못 쓰면 글칸을 선택해 둬서 Ctrl+C로 복사할 수 있게
       const ta = document.querySelector('.rp-export-text')
@@ -175,7 +211,7 @@ export function RpExportSheet({ kind, post, chars, onClose }) {
   }
   return (
     <Sheet
-      title={kind === 'novel' ? '소설로 변환' : 'HTML 코드로 변환'}
+      title={sheetTitle}
       onClose={onClose}
       wide
       footer={
@@ -192,7 +228,9 @@ export function RpExportSheet({ kind, post, chars, onClose }) {
       <p className="sheet-help">
         {kind === 'novel'
           ? '대사는 큰따옴표 안에, 지문은 문단으로, 구분선은 ***로 바꿨어요. 글자 꾸밈과 루비는 빼고 글자만 남겨요. 복사해서 메모장·블로그·소설 사이트에 붙여넣으면 돼요.'
-          : '지금 보이는 모습(두상·말풍선·지문·구분선·꾸밈) 그대로의 HTML이에요. 블로그·위키 등 HTML을 넣을 수 있는 곳에 붙여넣으면 돼요. 색은 지금 화면(라이트/다크)의 사이트 색을 따라요.'}
+          : kind === 'script'
+            ? "AI 채팅 로그처럼 대사는 '이름: 대사'로, 서술 지문은 *별표* 안에, 구분선은 ***로 바꿨어요. 글자 꾸밈과 루비는 빼고 글자만 남겨요."
+            : '지금 보이는 모습(두상·말풍선·지문·구분선·꾸밈) 그대로의 HTML이에요. 블로그·위키 등 HTML을 넣을 수 있는 곳에 붙여넣으면 돼요. 색은 지금 화면(라이트/다크)의 사이트 색을 따라요.'}
       </p>
       <div className="row gap-s wrap" style={{ marginBottom: 10 }}>
         <label className="check">
@@ -207,7 +245,7 @@ export function RpExportSheet({ kind, post, chars, onClose }) {
         )}
       </div>
       {kind === 'html' && <div className="rp-export-preview" aria-label="미리보기" dangerouslySetInnerHTML={{ __html: text }} />}
-      <textarea className={`rp-export-text ${kind === 'html' ? 'code' : ''}`} readOnly value={text} rows={kind === 'html' ? 8 : 14} onFocus={(e) => e.target.select()} aria-label={kind === 'novel' ? '소설 글' : 'HTML 코드'} />
+      <textarea className={`rp-export-text ${kind === 'html' ? 'code' : ''}`} readOnly value={text} rows={kind === 'html' ? 8 : 14} onFocus={(e) => e.target.select()} aria-label={label} />
     </Sheet>
   )
 }
