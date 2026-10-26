@@ -5,7 +5,7 @@ import { HR_KINDS, hrOptsOf, inlineHtml, parseScript } from './RpScript.jsx'
 
 // 역극 로그를 다른 곳에 옮길 수 있게 바꿔줘요.
 //  - 소설: 대사는 "큰따옴표" 안에, 지문은 문단으로, 구분선은 ***. 꾸밈은 빼고 글자만.
-//  - 채팅 로그: AI 채팅 로그처럼 대사는 '이름: 대사', 서술 지문은 *지문*, 구분선은 ***.
+//  - 채팅 로그: AI 채팅 로그처럼 대사는 '이름: 대사', 서술 지문은 *지문*, 구분선은 ---. (제목은 기본으로 빼요)
 //  - HTML: 지금 보이는 모습(두상·말풍선·지문·구분선·꾸밈) 그대로. 다른 사이트에는 이 사이트의 CSS가 없으니
 //    모양을 전부 태그 안(style="…")에 적어요.
 
@@ -60,7 +60,7 @@ export function scriptToTranscript(html, chars, site, title) {
   if (title) out.push(title)
   for (const b of parseScript(html)) {
     if (b.type === 'hr') {
-      out.push('***')
+      out.push('---')
       const cap = plainOf(b.text).trim()
       if (cap) out.push(namesOf(cap, site))
     } else if (b.type === 'say') {
@@ -184,7 +184,8 @@ export function scriptToHtmlCode(html, chars, site, title, colors = currentColor
 
 export function RpExportSheet({ kind, post, chars, onClose }) {
   const app = useApp()
-  const [withTitle, setWithTitle] = useState(true)
+  // 채팅 로그는 제목 없이 시작해요. (필요하면 체크해서 넣어요)
+  const [withTitle, setWithTitle] = useState(kind !== 'script')
   const [withBg, setWithBg] = useState(true)
   const title = withTitle ? post.title : ''
   const text = useMemo(
@@ -229,7 +230,7 @@ export function RpExportSheet({ kind, post, chars, onClose }) {
         {kind === 'novel'
           ? '대사는 큰따옴표 안에, 지문은 문단으로, 구분선은 ***로 바꿨어요. 글자 꾸밈과 루비는 빼고 글자만 남겨요. 복사해서 메모장·블로그·소설 사이트에 붙여넣으면 돼요.'
           : kind === 'script'
-            ? "AI 채팅 로그처럼 대사는 '이름: 대사'로, 서술 지문은 *별표* 안에, 구분선은 ***로 바꿨어요. 글자 꾸밈과 루비는 빼고 글자만 남겨요."
+            ? "AI 채팅 로그처럼 대사는 '이름: 대사'로, 서술 지문은 *별표* 안에, 구분선은 ---로 바꿨어요. 글자 꾸밈과 루비는 빼고 글자만 남겨요."
             : '지금 보이는 모습(두상·말풍선·지문·구분선·꾸밈) 그대로의 HTML이에요. 블로그·위키 등 HTML을 넣을 수 있는 곳에 붙여넣으면 돼요. 색은 지금 화면(라이트/다크)의 사이트 색을 따라요.'}
       </p>
       <div className="row gap-s wrap" style={{ marginBottom: 10 }}>

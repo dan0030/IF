@@ -137,7 +137,7 @@ export default function PostView({ id }) {
                   <button type="button" className="btn small ghost" onClick={() => setExporting('novel')} title="대사는 큰따옴표, 구분선은 ***로 바꾼 글자만의 소설 글">
                     <i className="fa-solid fa-book-open" /> 소설로 변환
                   </button>
-                  <button type="button" className="btn small ghost" onClick={() => setExporting('script')} title="AI 채팅 로그처럼 대사는 '이름: 대사', 지문은 *지문*, 구분선은 ***">
+                  <button type="button" className="btn small ghost" onClick={() => setExporting('script')} title="AI 채팅 로그처럼 대사는 '이름: 대사', 지문은 *지문*, 구분선은 ---">
                     <i className="fa-regular fa-comments" /> 채팅 로그로 변환
                   </button>
                   <button type="button" className="btn small ghost" onClick={() => setExporting('html')} title="지금 모습 그대로 다른 곳에 넣을 수 있는 HTML 코드">
