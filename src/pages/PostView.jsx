@@ -10,6 +10,7 @@ import { Empty, Spinner } from '../components/ui.jsx'
 import { ThreadView } from '../components/Thread.jsx'
 import { RpPostInfo, RpTitleTags, charsOf, useCategoryConfig } from './RpPage.jsx'
 import { RpScriptView, isScript } from '../components/RpScript.jsx'
+import { RpExportSheet } from '../components/RpExport.jsx'
 
 export default function PostView({ id }) {
   const app = useApp()
@@ -17,6 +18,7 @@ export default function PostView({ id }) {
   const [error, setError] = useState(null)
 
   const [reloadKey, setReloadKey] = useState(0)
+  const [exporting, setExporting] = useState(null) // 'novel' | 'html'
 
   useEffect(() => {
     let alive = true
@@ -130,6 +132,16 @@ export default function PostView({ id }) {
               <button type="button" className="btn small ghost danger" onClick={remove}>
                 <i className="fa-solid fa-trash" /> 삭제
               </button>
+              {rpCat && !post.locked && isScript(post.content) && (
+                <>
+                  <button type="button" className="btn small ghost" onClick={() => setExporting('novel')} title="대사는 큰따옴표, 구분선은 ***로 바꾼 글자만의 소설 글">
+                    <i className="fa-solid fa-book-open" /> 소설로 변환
+                  </button>
+                  <button type="button" className="btn small ghost" onClick={() => setExporting('html')} title="지금 모습 그대로 다른 곳에 넣을 수 있는 HTML 코드">
+                    <i className="fa-solid fa-code" /> HTML 코드
+                  </button>
+                </>
+              )}
             </div>
           )}
         </header>
@@ -153,6 +165,7 @@ export default function PostView({ id }) {
         )}
       </article>
       )}
+      {exporting && <RpExportSheet kind={exporting} post={post} chars={charsOf(rpConfig, app.site)} onClose={() => setExporting(null)} />}
 
       <nav className="article-nav">
         {post.prev ? (

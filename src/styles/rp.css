@@ -1020,3 +1020,22 @@
     padding: 12px;
   }
 }
+
+/* 소설·HTML로 변환 창 */
+.rp-export-preview {
+  max-height: 360px;
+  overflow: auto;
+  margin-bottom: 10px;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+}
+.rp-export-text {
+  width: 100%;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.rp-export-text.code {
+  font-size: 0.78rem;
+}

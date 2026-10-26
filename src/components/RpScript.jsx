@@ -116,6 +116,7 @@ function hrOpts(b) {
     width: ['short', 'mid', 'full'].includes(b?.width) ? b.width : 'full',
   }
 }
+export const hrOptsOf = hrOpts
 const hrColorCss = (c) => (c === 'accent' ? 'var(--accent)' : c)
 
 // 새 구분선은 마지막으로 쓴 모양으로 시작해요.
