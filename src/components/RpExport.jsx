@@ -133,7 +133,7 @@ export function scriptToHtmlCode(html, chars, site, title, colors = currentColor
     if (b.type === 'say') {
       const ch = map[b.char] || { name: b.name, avatar: b.ava }
       const cc = hex(ch.color) || C.accent
-      if (bubble === 'system') {
+      if ((ch.bubble === 'system' || ch.bubble === 'bubble' ? ch.bubble : bubble) === 'system') {
         // 게임 시스템 창: 어두운 반투명 판 + 가는 테두리·빛 + 네 모서리 꺾쇠 (이름·두상 없이, [ ] 기호는 지움)
         const corner = (pos) => `<span style="position:absolute;${pos};width:12px;height:12px;border-color:${cc};border-style:solid;border-width:0"></span>`
         rows.push(

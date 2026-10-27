@@ -348,6 +348,17 @@ const CHAR_FIELDS = [
       { value: 'right', label: '오른쪽' },
     ],
   },
+  {
+    key: 'bubble',
+    label: '대사 모양',
+    type: 'segmented',
+    options: [
+      { value: '', label: '페이지 기본 따르기' },
+      { value: 'bubble', label: '말풍선' },
+      { value: 'system', label: '시스템 창' },
+    ],
+    help: '이 캐릭터의 대사만 따로 정해요. 페이지 기본을 따르면 아래 \'기본 대사 모양\'대로 보여요.',
+  },
   { key: 'alias', label: '다른 이름 (쉼표로 구분 · 텍스트로 한 번에 넣을 때 알아봐요)', placeholder: '미카즈키 무네치카, 할아버지' },
 ]
 
@@ -376,10 +387,10 @@ function RpConfigEditor({ initial, onClose, onSave }) {
       itemLabel: '세계선',
       itemFields: WORLD_FIELDS,
     },
-    { type: 'heading', label: '대사 모양', help: '이 역극 페이지의 모든 글에 한 번에 적용돼요. (목록 카드의 대표 대사·HTML 코드로 변환에도)' },
+    { type: 'heading', label: '대사 모양', help: '이 역극 페이지의 모든 글에 한 번에 적용돼요. (목록 카드의 대표 대사·HTML 코드로 변환에도) 캐릭터마다 다르게 하려면 위 캐릭터 칸의 \'대사 모양\'에서 정해요.' },
     {
       key: 'bubble',
-      label: '대사 말풍선',
+      label: '기본 대사 모양',
       type: 'segmented',
       options: [
         { value: 'bubble', label: '말풍선 (두상 옆)' },

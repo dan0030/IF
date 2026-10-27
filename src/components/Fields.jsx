@@ -118,7 +118,7 @@ function FieldInput({ id, f, value, onChange }) {
         </select>
       )
     case 'segmented':
-      return <Segmented value={value} options={f.options} onChange={onChange} />
+      return <Segmented value={value ?? ''} options={f.options} onChange={onChange} />
     case 'date':
       return <input id={id} type="date" value={value || ''} onChange={(e) => onChange(e.target.value)} />
     case 'image':

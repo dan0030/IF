@@ -220,7 +220,9 @@ export function systemHtml(html) {
 // bubble: 'bubble'(기본, 두상 옆 말풍선) | 'system'(가운데 게임 시스템 창, 이름·두상 없이) — 역극 설정 › 대사 모양
 export function SayLine({ char, text, compact = false, bubble = 'bubble' }) {
   const { site } = useApp()
-  if (bubble === 'system') {
+  // 캐릭터마다 정한 대사 모양이 있으면 그걸, 없으면 페이지 기본
+  const shape = char?.bubble === 'system' || char?.bubble === 'bubble' ? char.bubble : bubble
+  if (shape === 'system') {
     return (
       <div className={`rp-say-row system ${compact ? 'compact' : ''}`} style={char?.color ? { '--cc': char.color } : undefined}>
         <div className="rp-sys" role="note" aria-label={char?.name ? `시스템 · ${char.name}` : '시스템'}>
