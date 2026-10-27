@@ -125,7 +125,7 @@ function inlineStyled(markup, site) {
   return namesOf(h.replace(/\{\{\s*(나|상대|페어)\s*\}\}/g, (m) => `\u0000${m}\u0000`), site).replace(/\u0000([^\u0000]*)\u0000/g, (_, n) => esc(n))
 }
 
-export function scriptToHtmlCode(html, chars, site, title, colors = currentColors(), withBg = true) {
+export function scriptToHtmlCode(html, chars, site, title, colors = currentColors(), withBg = true, bubble = 'bubble') {
   const map = Object.fromEntries((chars || []).map((c) => [c.key, c]))
   const C = colors
   const rows = []
@@ -133,6 +133,19 @@ export function scriptToHtmlCode(html, chars, site, title, colors = currentColor
     if (b.type === 'say') {
       const ch = map[b.char] || { name: b.name, avatar: b.ava }
       const cc = hex(ch.color) || C.accent
+      if (bubble === 'system') {
+        const mini = ch.avatar
+          ? `<img src="${esc(absUrl(ch.avatar))}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover">`
+          : ''
+        rows.push(
+          `<div style="display:flex;justify-content:center;margin:18px 0">` +
+            `<div style="width:min(88%,560px);border:1.5px solid ${mix(cc, C.surface, 0.55)};border-radius:10px;overflow:hidden;background:${mix(cc, C.surface, 0.05)};box-shadow:0 6px 18px rgba(0,0,0,0.06)">` +
+            `<div style="display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 12px;background:${mix(cc, C.surface, 0.16)};border-bottom:1px solid ${mix(cc, C.surface, 0.3)};font-size:0.78em;font-weight:750;letter-spacing:0.08em;color:${mix(cc, C.text, 0.65)}">${mini}<span>${esc(ch.name || '')}</span></div>` +
+            `<div style="padding:14px 18px;text-align:center;line-height:1.8;overflow-wrap:anywhere">${inlineStyled(b.text.trim(), site)}</div>` +
+            `</div></div>`,
+        )
+        continue
+      }
       const right = ch.side === 'right'
       const ava = ch.avatar
         ? `<img src="${esc(absUrl(ch.avatar))}" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 2px ${mix(cc, C.surface, 0.45)}">`
@@ -182,7 +195,7 @@ export function scriptToHtmlCode(html, chars, site, title, colors = currentColor
 
 /* ---------------- 내보내기 창 ---------------- */
 
-export function RpExportSheet({ kind, post, chars, onClose }) {
+export function RpExportSheet({ kind, post, chars, bubble, onClose }) {
   const app = useApp()
   // 채팅 로그는 제목 없이 시작해요. (필요하면 체크해서 넣어요)
   const [withTitle, setWithTitle] = useState(kind !== 'script')
@@ -194,8 +207,8 @@ export function RpExportSheet({ kind, post, chars, onClose }) {
         ? scriptToNovel(post.content, app.site, title)
         : kind === 'script'
           ? scriptToTranscript(post.content, chars, app.site, title)
-          : scriptToHtmlCode(post.content, chars, app.site, title, currentColors(), withBg),
-    [kind, post.content, chars, app.site, title, withBg],
+          : scriptToHtmlCode(post.content, chars, app.site, title, currentColors(), withBg, bubble),
+    [kind, post.content, chars, app.site, title, withBg, bubble],
   )
   const NAMES = { novel: ['소설로 변환', '소설 글'], script: ['채팅 로그로 변환', '채팅 로그'], html: ['HTML 코드로 변환', 'HTML 코드'] }
   const [sheetTitle, label] = NAMES[kind] || NAMES.html

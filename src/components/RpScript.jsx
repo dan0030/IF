@@ -212,8 +212,22 @@ export function Avatar({ char, size = 44 }) {
   )
 }
 
-export function SayLine({ char, text, compact = false }) {
+// bubble: 'bubble'(기본, 두상 옆 말풍선) | 'system'(가운데 시스템 창) — 역극 설정 › 대사 모양
+export function SayLine({ char, text, compact = false, bubble = 'bubble' }) {
   const { site } = useApp()
+  if (bubble === 'system') {
+    return (
+      <div className={`rp-say-row system ${compact ? 'compact' : ''}`} style={char?.color ? { '--cc': char.color } : undefined}>
+        <div className="rp-sys" role="group" aria-label={char?.name ? `${char.name}의 대사` : '대사'}>
+          <div className="rp-sys-head">
+            <Avatar char={char} size={compact ? 18 : 22} />
+            <span>{char?.name}</span>
+          </div>
+          <div className="rp-sys-body" dangerouslySetInnerHTML={{ __html: displayHtml(text, site) }} />
+        </div>
+      </div>
+    )
+  }
   return (
     <div className={`rp-say-row ${char?.side === 'right' ? 'right' : 'left'} ${compact ? 'compact' : ''}`} style={char?.color ? { '--cc': char.color } : undefined}>
       <Avatar char={char} size={compact ? 34 : 46} />
@@ -225,7 +239,7 @@ export function SayLine({ char, text, compact = false }) {
   )
 }
 
-export function RpScriptView({ html, chars }) {
+export function RpScriptView({ html, chars, bubble }) {
   const { site } = useApp()
   const blocks = useMemo(() => parseScript(html), [html])
   const map = useMemo(() => Object.fromEntries((chars || []).map((c) => [c.key, c])), [chars])
@@ -235,7 +249,7 @@ export function RpScriptView({ html, chars }) {
         b.type === 'hr' ? (
           <Divider key={b.id} b={b} html={b.text ? displayHtml(b.text, site) : ''} />
         ) : b.type === 'say' ? (
-          <SayLine key={b.id} char={map[b.char] || { name: b.name, avatar: b.ava }} text={b.text} />
+          <SayLine key={b.id} char={map[b.char] || { name: b.name, avatar: b.ava }} text={b.text} bubble={bubble} />
         ) : (
           <div key={b.id} className="rp-act-view">
             {b.text.split(/\n{2,}/).map((p, i) => (

@@ -198,7 +198,7 @@ export default function Write({ id }) {
             <h1 className="article-title">{post.title || '(제목 없음)'}</h1>
             {post.extra.subtitle && <p className="article-subtitle">{post.extra.subtitle}</p>}
           </header>
-          {isScript(post.content) ? <RpScriptView html={post.content} chars={rpChars} /> : <Content html={post.content} />}
+          {isScript(post.content) ? <RpScriptView html={post.content} chars={rpChars} bubble={rpConfig?.bubble} /> : <Content html={post.content} />}
         </article>
       ) : useScript ? (
         rpConfig ? (

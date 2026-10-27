@@ -407,6 +407,79 @@
 .rp-say-row.right .rp-bubble {
   border-radius: 20px 6px 20px 20px;
 }
+/* 대사 모양: 시스템 창 (역극 설정 › 대사 모양) — 게임 시스템 메시지처럼 가운데에 */
+.rp-say-row.system {
+  justify-content: center;
+  margin: 18px 0;
+}
+.rp-sys {
+  width: min(88%, 560px);
+  border: 1.5px solid color-mix(in srgb, var(--cc) 55%, transparent);
+  border-radius: 10px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--cc) 5%, var(--surface));
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+.rp-sys-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: color-mix(in srgb, var(--cc) 16%, var(--surface));
+  border-bottom: 1px solid color-mix(in srgb, var(--cc) 30%, transparent);
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--cc) 65%, var(--text));
+}
+.rp-sys-head .rp-ava {
+  font-size: 0.6rem;
+}
+.rp-sys-body {
+  padding: 14px 18px;
+  text-align: center;
+  line-height: 1.8;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.rp-sys-body:has(ruby) {
+  padding-top: 18px;
+  line-height: 2.15;
+}
+.rp-sys-body ruby {
+  display: inline-block;
+  position: relative;
+  max-width: 100%;
+}
+.rp-sys-body ruby rt {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  margin-bottom: -0.1em;
+  width: max-content;
+  max-width: max(100%, 14em);
+  font-size: 0.55em;
+  line-height: 1;
+  white-space: normal;
+  opacity: 0.85;
+}
+.rp-say-row.system.compact {
+  margin: 0;
+}
+.rp-say-row.system.compact .rp-sys {
+  width: 100%;
+}
+.rp-say-row.system.compact .rp-sys-head {
+  padding: 4px 10px;
+  font-size: 0.7rem;
+}
+.rp-say-row.system.compact .rp-sys-body {
+  padding: 8px 12px;
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
 .rp-say-row.compact {
   margin: 0;
   gap: 9px;

@@ -153,7 +153,7 @@ export default function PostView({ id }) {
           <Unlock post={post} onUnlocked={setPost} />
         ) : (
           <>
-            {rpCat && isScript(post.content) ? <RpScriptView html={post.content} chars={charsOf(rpConfig, app.site)} /> : <Content html={post.content} />}
+            {rpCat && isScript(post.content) ? <RpScriptView html={post.content} chars={charsOf(rpConfig, app.site)} bubble={rpConfig?.bubble} /> : <Content html={post.content} />}
             {post.tags?.length > 0 && (
               <div className="article-tags">
                 {post.tags.map((t) => (
@@ -168,7 +168,7 @@ export default function PostView({ id }) {
         )}
       </article>
       )}
-      {exporting && <RpExportSheet kind={exporting} post={post} chars={charsOf(rpConfig, app.site)} onClose={() => setExporting(null)} />}
+      {exporting && <RpExportSheet kind={exporting} post={post} chars={charsOf(rpConfig, app.site)} bubble={rpConfig?.bubble} onClose={() => setExporting(null)} />}
 
       <nav className="article-nav">
         {post.prev ? (

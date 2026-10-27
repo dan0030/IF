@@ -238,7 +238,7 @@ export default function RpPage({ category, search }) {
       ) : (
         <div className="rp-grid" style={{ '--rp-cols': list.cols }}>
           {data.items.map((p) => (
-            <RpCard key={p.id} post={p} world={worldMap[p.rpWorld]} charMap={charMap} query={q} onTag={(t) => go({ tag: t })} />
+            <RpCard key={p.id} post={p} world={worldMap[p.rpWorld]} charMap={charMap} query={q} onTag={(t) => go({ tag: t })} bubble={config?.bubble} />
           ))}
         </div>
       )}
@@ -246,7 +246,7 @@ export default function RpPage({ category, search }) {
 
       {editing && (
         <RpConfigEditor
-          initial={{ intro: config?.intro || '', worlds: worldsOf(config), characters: charsOf(config, app.site), columns: String(list.cols), perPage: String(list.perPage), sort: list.sort }}
+          initial={{ intro: config?.intro || '', worlds: worldsOf(config), characters: charsOf(config, app.site), columns: String(list.cols), perPage: String(list.perPage), sort: list.sort, bubble: config?.bubble === 'system' ? 'system' : 'bubble' }}
           onClose={() => setEditing(false)}
           onSave={async (next) => {
             const merged = { ...(config || {}), ...next }
@@ -280,7 +280,7 @@ function Highlight({ text, query }) {
   return parts
 }
 
-function RpCard({ post, world, charMap, query, onTag }) {
+function RpCard({ post, world, charMap, query, onTag, bubble }) {
   const { site } = useApp()
   const status = STATUS_LABEL[post.rpStatus]
   const quote = !post.locked && post.rpQuote?.text ? post.rpQuote : null
@@ -305,7 +305,7 @@ function RpCard({ post, world, charMap, query, onTag }) {
         </span>
         {quote && !post.snippet && (
           <span className="rp-card-quote">
-            <SayLine char={charMap[quote.char] || { name: '' }} text={quote.text} compact />
+            <SayLine char={charMap[quote.char] || { name: '' }} text={quote.text} compact bubble={bubble} />
           </span>
         )}
         {post.snippet ? (
@@ -376,6 +376,16 @@ function RpConfigEditor({ initial, onClose, onSave }) {
       itemLabel: '세계선',
       itemFields: WORLD_FIELDS,
     },
+    { type: 'heading', label: '대사 모양', help: '이 역극 페이지의 모든 글에 한 번에 적용돼요. (목록 카드의 대표 대사·HTML 코드로 변환에도)' },
+    {
+      key: 'bubble',
+      label: '대사 말풍선',
+      type: 'segmented',
+      options: [
+        { value: 'bubble', label: '말풍선 (두상 옆)' },
+        { value: 'system', label: '시스템 창 (가운데)' },
+      ],
+    },
     { type: 'heading', label: '목록', help: '역극 카드 목록을 어떻게 보여줄지 정해요. 휴대폰처럼 좁은 화면에서는 한 줄 카드 수가 저절로 줄어요.' },
     {
       key: 'columns',
@@ -417,6 +427,7 @@ function RpConfigEditor({ initial, onClose, onSave }) {
         columns: Number(draft.columns) || 3,
         perPage: draft.perPage === 'all' ? 'all' : Number(draft.perPage) || 24,
         sort: draft.sort === 'recent' ? 'recent' : 'oldest',
+        bubble: draft.bubble === 'system' ? 'system' : 'bubble',
       })
     } catch (e) {
       window.alert(e.message)
