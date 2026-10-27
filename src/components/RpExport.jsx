@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { useApp } from '../lib/store.jsx'
 import { Sheet } from './ui.jsx'
-import { HR_KINDS, hrOptsOf, inlineHtml, parseScript } from './RpScript.jsx'
+import { HR_KINDS, hrOptsOf, inlineHtml, parseScript, systemHtml } from './RpScript.jsx'
 
 // 역극 로그를 다른 곳에 옮길 수 있게 바꿔줘요.
 //  - 소설: 대사는 "큰따옴표" 안에, 지문은 문단으로, 구분선은 ***. 꾸밈은 빼고 글자만.
@@ -134,14 +134,16 @@ export function scriptToHtmlCode(html, chars, site, title, colors = currentColor
       const ch = map[b.char] || { name: b.name, avatar: b.ava }
       const cc = hex(ch.color) || C.accent
       if (bubble === 'system') {
-        const mini = ch.avatar
-          ? `<img src="${esc(absUrl(ch.avatar))}" alt="" style="width:22px;height:22px;border-radius:50%;object-fit:cover">`
-          : ''
+        // 게임 시스템 창: 어두운 반투명 판 + 가는 테두리·빛 + 네 모서리 꺾쇠 (이름·두상 없이, [ ] 기호는 지움)
+        const corner = (pos) => `<span style="position:absolute;${pos};width:12px;height:12px;border-color:${cc};border-style:solid;border-width:0"></span>`
         rows.push(
-          `<div style="display:flex;justify-content:center;margin:18px 0">` +
-            `<div style="width:min(88%,560px);border:1.5px solid ${mix(cc, C.surface, 0.55)};border-radius:10px;overflow:hidden;background:${mix(cc, C.surface, 0.05)};box-shadow:0 6px 18px rgba(0,0,0,0.06)">` +
-            `<div style="display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 12px;background:${mix(cc, C.surface, 0.16)};border-bottom:1px solid ${mix(cc, C.surface, 0.3)};font-size:0.78em;font-weight:750;letter-spacing:0.08em;color:${mix(cc, C.text, 0.65)}">${mini}<span>${esc(ch.name || '')}</span></div>` +
-            `<div style="padding:14px 18px;text-align:center;line-height:1.8;overflow-wrap:anywhere">${inlineStyled(b.text.trim(), site)}</div>` +
+          `<div style="display:flex;justify-content:center;margin:22px 0">` +
+            `<div style="position:relative;width:min(86%,540px);padding:16px 22px;background:rgba(14,18,30,0.92);color:#eef4ff;border:1px solid ${mix(cc, '#0e121e', 0.6)};border-radius:4px;box-shadow:0 0 0 1px rgba(255,255,255,0.04) inset,0 0 18px ${mix(cc, '#0e121e', 0.35)};text-align:center;line-height:1.8;letter-spacing:0.02em;overflow-wrap:anywhere">` +
+            corner('top:-1px;left:-1px').replace('border-width:0', 'border-width:2px 0 0 2px') +
+            corner('top:-1px;right:-1px').replace('border-width:0', 'border-width:2px 2px 0 0') +
+            corner('bottom:-1px;left:-1px').replace('border-width:0', 'border-width:0 0 2px 2px') +
+            corner('bottom:-1px;right:-1px').replace('border-width:0', 'border-width:0 2px 2px 0') +
+            systemHtml(inlineStyled(b.text.trim(), site)) +
             `</div></div>`,
         )
         continue

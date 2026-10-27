@@ -212,18 +212,23 @@ export function Avatar({ char, size = 44 }) {
   )
 }
 
-// bubble: 'bubble'(기본, 두상 옆 말풍선) | 'system'(가운데 시스템 창) — 역극 설정 › 대사 모양
+// 시스템 창 안에서는 [ ] 기호를 지워서 보여줘요. (꾸밈 표시 [b] 등은 먼저 태그로 바뀌어 있어서 남은 건 글자 그대로의 괄호예요)
+export function systemHtml(html) {
+  return String(html || '').replace(/[[\]［］]/g, '')
+}
+
+// bubble: 'bubble'(기본, 두상 옆 말풍선) | 'system'(가운데 게임 시스템 창, 이름·두상 없이) — 역극 설정 › 대사 모양
 export function SayLine({ char, text, compact = false, bubble = 'bubble' }) {
   const { site } = useApp()
   if (bubble === 'system') {
     return (
       <div className={`rp-say-row system ${compact ? 'compact' : ''}`} style={char?.color ? { '--cc': char.color } : undefined}>
-        <div className="rp-sys" role="group" aria-label={char?.name ? `${char.name}의 대사` : '대사'}>
-          <div className="rp-sys-head">
-            <Avatar char={char} size={compact ? 18 : 22} />
-            <span>{char?.name}</span>
-          </div>
-          <div className="rp-sys-body" dangerouslySetInnerHTML={{ __html: displayHtml(text, site) }} />
+        <div className="rp-sys" role="note" aria-label={char?.name ? `시스템 · ${char.name}` : '시스템'}>
+          <i className="rp-sys-corner tl" aria-hidden="true" />
+          <i className="rp-sys-corner tr" aria-hidden="true" />
+          <i className="rp-sys-corner bl" aria-hidden="true" />
+          <i className="rp-sys-corner br" aria-hidden="true" />
+          <div className="rp-sys-body" dangerouslySetInnerHTML={{ __html: systemHtml(displayHtml(text, site)) }} />
         </div>
       </div>
     )

@@ -407,44 +407,75 @@
 .rp-say-row.right .rp-bubble {
   border-radius: 20px 6px 20px 20px;
 }
-/* 대사 모양: 시스템 창 (역극 설정 › 대사 모양) — 게임 시스템 메시지처럼 가운데에 */
+/* 대사 모양: 시스템 창 (역극 설정 › 대사 모양) — 게임 시스템 창처럼 가운데에, 이름·두상 없이.
+   라이트·다크 모드와 상관없이 어두운 반투명 판에 밝은 글자, 테두리·빛·모서리 꺾쇠는 캐릭터 색. */
 .rp-say-row.system {
   justify-content: center;
-  margin: 18px 0;
+  margin: 22px 0;
 }
 .rp-sys {
-  width: min(88%, 560px);
-  border: 1.5px solid color-mix(in srgb, var(--cc) 55%, transparent);
-  border-radius: 10px;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--cc) 5%, var(--surface));
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  position: relative;
+  width: min(86%, 540px);
+  padding: 16px 22px;
+  border: 1px solid color-mix(in srgb, var(--cc) 60%, transparent);
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 40%),
+    rgba(14, 18, 30, 0.92);
+  color: #eef4ff;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 0 18px color-mix(in srgb, var(--cc) 35%, transparent),
+    0 8px 24px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: rp-sys-in 0.35s var(--ease) both;
 }
-.rp-sys-head {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: color-mix(in srgb, var(--cc) 16%, var(--surface));
-  border-bottom: 1px solid color-mix(in srgb, var(--cc) 30%, transparent);
-  font-size: 0.78rem;
-  font-weight: 750;
-  letter-spacing: 0.08em;
-  color: color-mix(in srgb, var(--cc) 65%, var(--text));
+@keyframes rp-sys-in {
+  from {
+    opacity: 0;
+    transform: scaleY(0.6);
+  }
 }
-.rp-sys-head .rp-ava {
-  font-size: 0.6rem;
+:root[data-anim='off'] .rp-sys {
+  animation: none;
+}
+.rp-sys-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 0 solid var(--cc);
+}
+.rp-sys-corner.tl {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+.rp-sys-corner.tr {
+  top: -1px;
+  right: -1px;
+  border-width: 2px 2px 0 0;
+}
+.rp-sys-corner.bl {
+  bottom: -1px;
+  left: -1px;
+  border-width: 0 0 2px 2px;
+}
+.rp-sys-corner.br {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
 }
 .rp-sys-body {
-  padding: 14px 18px;
   text-align: center;
   line-height: 1.8;
+  letter-spacing: 0.02em;
   white-space: pre-line;
   overflow-wrap: anywhere;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--cc) 30%, transparent);
 }
 .rp-sys-body:has(ruby) {
-  padding-top: 18px;
+  padding-top: 4px;
   line-height: 2.15;
 }
 .rp-sys-body ruby {
@@ -470,13 +501,9 @@
 }
 .rp-say-row.system.compact .rp-sys {
   width: 100%;
-}
-.rp-say-row.system.compact .rp-sys-head {
-  padding: 4px 10px;
-  font-size: 0.7rem;
+  padding: 10px 14px;
 }
 .rp-say-row.system.compact .rp-sys-body {
-  padding: 8px 12px;
   font-size: 0.86rem;
   line-height: 1.6;
 }
