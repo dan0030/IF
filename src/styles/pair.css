@@ -77,6 +77,7 @@
   white-space: pre-line;
   /* 양쪽 정렬: 단어 단위로만 줄을 바꾸면 띄어쓰기가 크게 벌어져서, 글자 사이에서도 자연스럽게 줄을 바꿔요 */
   text-align: justify;
+  text-justify: inter-character;
   text-align-last: left;
   word-break: normal;
   line-break: normal;
@@ -412,7 +413,9 @@
 .pair-card .prose {
   font-size: 0.95rem;
   text-align: justify;
+  text-justify: inter-character;
   word-break: normal;
+  line-break: normal;
   overflow-wrap: anywhere;
 }
 .pair-profile {

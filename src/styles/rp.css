@@ -688,7 +688,9 @@
   line-height: 1.95;
   color: color-mix(in srgb, var(--text) 82%, var(--text-sub));
   text-align: justify;
+  text-justify: inter-character;
   word-break: normal;
+  line-break: normal;
   overflow-wrap: anywhere;
   white-space: pre-line;
 }

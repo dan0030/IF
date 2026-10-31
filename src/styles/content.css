@@ -12,6 +12,17 @@
 .prose > :first-child {
   margin-top: 0;
 }
+/* 양쪽 정렬: 단어 단위로만 줄을 바꾸면(keep-all) 긴 단어가 통째로 다음 줄로 넘어가서 띄어쓰기가 크게 벌어져요.
+   양쪽 정렬한 문단은 한글을 글자 사이에서도 줄바꿈해 줄을 꽉 채워요. (영어 단어는 그대로 단어 단위)
+   글자 사이 간격으로 나눠 맞추는 걸 지원하는 브라우저에서는 띄어쓰기 대신 글자 사이를 조금씩 벌려요. */
+.prose [style*='text-align: justify'],
+.prose [style*='text-align:justify'],
+.prose [align='justify'] {
+  word-break: normal;
+  line-break: normal;
+  text-justify: inter-character;
+  text-align-last: start;
+}
 .prose p {
   margin: 0 0 0.9em;
 }
