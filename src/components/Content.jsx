@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { swapNames, useApp } from '../lib/store.jsx'
 import { loadFontsIn } from '../lib/theme.js'
@@ -8,6 +8,7 @@ export function Content({ html, className = 'prose', runScripts = true }) {
   const { site } = useApp()
   const ref = useRef(null)
   const [lightbox, setLightbox] = useState(null)
+  const fnId = useId().replace(/:/g, '')
 
   useEffect(() => {
     const el = ref.current
@@ -28,6 +29,40 @@ export function Content({ html, className = 'prose', runScripts = true }) {
       t.replaceWith(wrap)
       wrap.appendChild(t)
     })
+    // 각주: 본문의 각주 표시에 순서대로 번호를 붙이고, 맨 아래에 각주 모음을 만들어요. (서로 눌러서 오갈 수 있게)
+    const refs = Array.from(el.querySelectorAll('sup.fn'))
+    if (refs.length) {
+      const list = document.createElement('ol')
+      refs.forEach((sup, i) => {
+        const n = i + 1
+        const note = sup.dataset.note || ''
+        sup.removeAttribute('contenteditable')
+        sup.id = `fnref-${fnId}-${n}`
+        sup.innerHTML = ''
+        const a = document.createElement('a')
+        a.href = `#fn-${fnId}-${n}`
+        a.className = 'fn-link'
+        a.textContent = `[${n}]`
+        a.title = note
+        a.setAttribute('aria-label', `각주 ${n}: ${note}`)
+        sup.appendChild(a)
+        const li = document.createElement('li')
+        li.id = `fn-${fnId}-${n}`
+        li.append(note + ' ')
+        const back = document.createElement('a')
+        back.href = `#fnref-${fnId}-${n}`
+        back.className = 'fn-back'
+        back.textContent = '↩'
+        back.setAttribute('aria-label', `${n}번 각주가 있는 곳으로`)
+        li.appendChild(back)
+        list.appendChild(li)
+      })
+      const section = document.createElement('section')
+      section.className = 'footnotes'
+      section.setAttribute('aria-label', '각주')
+      section.appendChild(list)
+      el.appendChild(section)
+    }
     loadFontsIn(el)
     el.querySelectorAll('img').forEach((img) => {
       img.loading = 'lazy'
@@ -46,9 +81,22 @@ export function Content({ html, className = 'prose', runScripts = true }) {
       img.replaceWith(wrap)
       wrap.append(img, label)
     })
-  }, [html, site, runScripts])
+  }, [html, site, runScripts, fnId])
 
   function onClick(e) {
+    // 각주 ↔ 각주 모음: 부드럽게 옮겨가고 잠깐 강조해요.
+    const fnLink = e.target.closest?.('a.fn-link, a.fn-back')
+    if (fnLink) {
+      e.preventDefault()
+      const target = ref.current?.querySelector(fnLink.getAttribute('href'))
+      if (target) {
+        target.scrollIntoView({ behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' })
+        target.classList.remove('fn-flash')
+        void target.offsetWidth
+        target.classList.add('fn-flash')
+      }
+      return
+    }
     const spoilerImg = e.target.closest('.spoiler-img-wrap')
     if (spoilerImg && !spoilerImg.classList.contains('revealed')) {
       e.preventDefault()

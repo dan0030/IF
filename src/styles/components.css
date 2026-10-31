@@ -1786,7 +1786,7 @@ textarea.code,
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 8px 7px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
   border-radius: var(--radius) var(--radius) 0 0;
@@ -1795,7 +1795,7 @@ textarea.code,
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
 }
 .tb-group {
@@ -1824,7 +1824,7 @@ textarea.code,
   align-items: center;
   justify-content: center;
   gap: 5px;
-  padding: 0 8px;
+  padding: 0 7px;
   border: none;
   border-radius: 10px;
   background: transparent;
@@ -1876,6 +1876,111 @@ textarea.code,
   background: var(--surface);
   font-size: 0.84rem;
   cursor: pointer;
+}
+/* 저장한 글자색 */
+.tb-presets {
+  align-items: center;
+}
+.tb-preset-swatch {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line);
+  color: #fff;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+.tb-preset-swatch i {
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+}
+.tb-preset-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px dashed var(--line);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-sub);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.tb-preset-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.tb-preset-edit {
+  margin-left: 8px;
+  padding: 0 6px;
+  border: none;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tb-btn.tb-hist {
+  min-width: 24px;
+  padding: 0 2px;
+}
+.tb-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+/* 에디터 안 각주 표시: 글 순서대로 [1] [2]… 번호가 저절로 보여요 */
+.editor-area {
+  counter-reset: fn;
+}
+.editor-area sup.fn {
+  counter-increment: fn;
+  display: inline-block;
+  font-size: 0;
+  line-height: 1;
+  vertical-align: super;
+  cursor: pointer;
+}
+.editor-area sup.fn::before {
+  content: '[' counter(fn) ']';
+  margin: 0 1px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent-text);
+}
+.editor-footnotes {
+  margin: 0 14px 12px;
+  padding: 10px 12px;
+  border-top: 1px dashed var(--line);
+  font-size: 0.82rem;
+  color: var(--text-sub);
+}
+.editor-footnotes-title {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+.editor-footnotes ol {
+  margin: 0;
+  padding-left: 1.6em;
+}
+.editor-footnotes button {
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.editor-footnotes button:hover {
+  color: var(--accent-text);
 }
 .tb-color-chip input {
   position: absolute;

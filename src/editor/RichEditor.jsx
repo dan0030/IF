@@ -128,6 +128,14 @@ export function RichEditor({ value, onChange, mode, onModeChange }) {
   const selectedImg = useRef(null)
   const [imgSel, setImgSel] = useState(null) // 지금 골라진 사진 (사진 도구 막대를 띄우려고)
   const [state, setState] = useState({})
+  const [lastColor, setLastColor] = useState('') // 방금 쓴 글자색 (색 저장용)
+  const [presetEdit, setPresetEdit] = useState(false)
+  const [footnotes, setFootnotes] = useState([]) // 편집 중인 글의 각주 내용 (아래 목록용)
+
+  // 되돌리기·다시 실행: 브라우저 기본 기록은 사진·상자처럼 직접 끼워 넣은 내용을 되돌리지 못해서,
+  // 바뀔 때마다 본문과 커서 위치를 직접 기록해요. 이어서 타자 치는 건 한 번으로 묶어요.
+  const history = useRef({ stack: [], index: -1, at: 0 })
+  const [, setHistVer] = useState(0)
 
   // 바깥에서 값이 바뀌었을 때만 편집 영역을 다시 그립니다. (커서가 튀지 않게)
   useEffect(() => {
@@ -137,6 +145,9 @@ export function RichEditor({ value, onChange, mode, onModeChange }) {
       el.innerHTML = value || ''
       lastHtml.current = value
       loadFontsIn(el)
+      history.current = { stack: [{ html: el.innerHTML, caret: 0 }], index: 0, at: 0 }
+      setHistVer((v) => v + 1)
+      refreshFootnotes()
     }
   }, [value, mode])
 
@@ -168,11 +179,150 @@ export function RichEditor({ value, onChange, mode, onModeChange }) {
     return () => document.removeEventListener('selectionchange', onSel)
   }, [])
 
-  function emit() {
+  function cleanHtml() {
     // 사진 선택 표시(img-selected)는 저장하지 않아요.
-    const html = editorRef.current.innerHTML.replace(/ class="img-selected"/g, '').replace(/\s?img-selected/g, '')
+    return editorRef.current.innerHTML.replace(/ class="img-selected"/g, '').replace(/\s?img-selected/g, '')
+  }
+
+  // typing: 이어서 타자 치는 중이면 바로 앞 기록에 합쳐요.
+  function emit(typing = false) {
+    const html = cleanHtml()
+    record(html, typing)
+    refreshFootnotes()
+    if (html === lastHtml.current) return
     lastHtml.current = html
     onChange(html)
+  }
+
+  /* ---------- 되돌리기 · 다시 실행 ---------- */
+
+  // 커서 위치를 '앞에서 몇 번째 글자'로 기억해요.
+  function caretOffset() {
+    const el = editorRef.current
+    const sel = window.getSelection()
+    if (!el || !sel.rangeCount || !el.contains(sel.anchorNode)) return null
+    const r = document.createRange()
+    r.selectNodeContents(el)
+    r.setEnd(sel.anchorNode, sel.anchorOffset)
+    return r.toString().length
+  }
+
+  function setCaret(offset) {
+    const el = editorRef.current
+    if (offset == null) return
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+    let left = offset
+    let node
+    while ((node = walker.nextNode())) {
+      if (left <= node.length) {
+        const r = document.createRange()
+        r.setStart(node, left)
+        r.collapse(true)
+        const sel = window.getSelection()
+        sel.removeAllRanges()
+        sel.addRange(r)
+        savedRange.current = r.cloneRange()
+        return
+      }
+      left -= node.length
+    }
+  }
+
+  function record(html, typing) {
+    const h = history.current
+    const top = h.stack[h.index]
+    if (top && top.html === html) return
+    const snap = { html, caret: caretOffset() }
+    const now = Date.now()
+    h.stack = h.stack.slice(0, h.index + 1)
+    if (typing && h.typing && now - h.at < 1200 && h.index > 0) h.stack[h.index] = snap
+    else h.stack.push(snap)
+    if (h.stack.length > 200) h.stack.shift()
+    h.index = h.stack.length - 1
+    h.at = now
+    h.typing = typing
+    setHistVer((v) => v + 1)
+  }
+
+  function jump(step) {
+    const h = history.current
+    const next = h.index + step
+    if (next < 0 || next >= h.stack.length) return
+    h.index = next
+    h.typing = false
+    const snap = h.stack[next]
+    const el = editorRef.current
+    el.innerHTML = snap.html
+    loadFontsIn(el)
+    el.focus()
+    setCaret(snap.caret)
+    clearImgSel()
+    lastHtml.current = snap.html
+    onChange(snap.html)
+    refreshFootnotes()
+    setHistVer((v) => v + 1)
+  }
+  const undo = () => jump(-1)
+  const redo = () => jump(1)
+  const canUndo = history.current.index > 0
+  const canRedo = history.current.index < history.current.stack.length - 1
+
+  function onKeyDown(e) {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return
+    const k = e.key.toLowerCase()
+    if (k === 'z' && !e.shiftKey) {
+      e.preventDefault()
+      undo()
+    } else if ((k === 'z' && e.shiftKey) || k === 'y') {
+      e.preventDefault()
+      redo()
+    }
+  }
+
+  /* ---------- 각주 ---------- */
+
+  function refreshFootnotes() {
+    const el = editorRef.current
+    if (!el) return
+    const notes = Array.from(el.querySelectorAll('sup.fn')).map((s) => s.dataset.note || '')
+    setFootnotes((prev) => (prev.length === notes.length && prev.every((n, i) => n === notes[i]) ? prev : notes))
+  }
+
+  // 커서 자리에 각주 표시를 넣어요. 번호는 글 순서대로 저절로 붙고, 글을 볼 때 맨 아래에 각주 모음이 생겨요.
+  function addFootnote() {
+    const note = window.prompt('각주 내용을 적어주세요')
+    if (!note || !note.trim()) return
+    insertHtml(`<sup class="fn" contenteditable="false" data-note="${escapeHtml(note.trim())}">*</sup>&#8203;`)
+  }
+
+  function editFootnote(sup) {
+    const next = window.prompt('각주 내용을 고쳐주세요 (비우면 이 각주를 지워요)', sup.dataset.note || '')
+    if (next === null) return
+    if (next.trim()) sup.dataset.note = next.trim()
+    else sup.remove()
+    emit()
+  }
+
+  function editFootnoteAt(i) {
+    const sup = editorRef.current?.querySelectorAll('sup.fn')[i]
+    if (sup) editFootnote(sup)
+  }
+
+  /* ---------- 글자색 저장 ---------- */
+
+  const colorPresets = Array.isArray(app.site.colorPresets) ? app.site.colorPresets.filter((c) => /^#[0-9a-f]{6}$/i.test(c)) : []
+  async function saveColorPresets(list) {
+    try {
+      await app.saveSetting('site', { ...app.site, colorPresets: list.slice(0, 24) })
+    } catch (e) {
+      app.showToast(e.message)
+    }
+  }
+  function addColorPreset() {
+    if (!lastColor) return app.showToast('먼저 글자색을 골라 써보세요. 방금 쓴 색을 저장해요.')
+    if (colorPresets.includes(lastColor)) return app.showToast('이미 저장한 색이에요.')
+    saveColorPresets([...colorPresets, lastColor])
+    app.showToast('글자색을 저장했어요.')
   }
 
   function restore() {
@@ -246,6 +396,11 @@ export function RichEditor({ value, onChange, mode, onModeChange }) {
 
   // 본문 속 사진을 누르면 골라진 상태가 되고, "사진 편집"으로 바로 고칠 수 있어요.
   function onEditorClick(e) {
+    const fn = e.target.closest?.('sup.fn')
+    if (fn && editorRef.current.contains(fn)) {
+      editFootnote(fn)
+      return
+    }
     selectedImg.current?.classList.remove('img-selected')
     selectedImg.current = null
     if (e.target.tagName === 'IMG' && editorRef.current.contains(e.target)) {
@@ -465,6 +620,12 @@ export function RichEditor({ value, onChange, mode, onModeChange }) {
         {mode === 'rich' ? (
           <div className="tb-groups">
             <div className="tb-group">
+              <button type="button" className="tb-btn tb-hist" onMouseDown={(e) => e.preventDefault()} onClick={undo} disabled={!canUndo} title="되돌리기 (Ctrl+Z)" aria-label="되돌리기">
+                <i className="fa-solid fa-rotate-left" />
+              </button>
+              <button type="button" className="tb-btn tb-hist" onMouseDown={(e) => e.preventDefault()} onClick={redo} disabled={!canRedo} title="다시 실행 (Ctrl+Y)" aria-label="다시 실행">
+                <i className="fa-solid fa-rotate-right" />
+              </button>
               <select className="tb-select" value={BLOCKS.some((b) => b.value === state.block) ? state.block : 'p'} onChange={(e) => exec('formatBlock', e.target.value)} aria-label="문단 모양">
                 {BLOCKS.map((b) => (
                   <option key={b.value} value={b.value}>
@@ -509,13 +670,57 @@ export function RichEditor({ value, onChange, mode, onModeChange }) {
                   <MI icon="fa-solid fa-eye-slash" label="스포일러" onClick={() => wrapSelection('spoiler')} />
                   <MI icon="fa-solid fa-text-slash" label="서식 지우기" onClick={() => exec('removeFormat')} />
                   <label className="tb-color-chip" onMouseDown={() => restore()}>
-                    <i className="fa-solid fa-palette" /> 글자색
-                    <input type="color" onChange={(e) => exec('foreColor', e.target.value)} aria-label="글자색" />
+                    <i className="fa-solid fa-palette" style={lastColor ? { color: lastColor } : undefined} /> 글자색
+                    <input
+                      type="color"
+                      value={lastColor || '#000000'}
+                      onChange={(e) => {
+                        setLastColor(e.target.value)
+                        exec('foreColor', e.target.value)
+                      }}
+                      aria-label="글자색"
+                    />
                   </label>
                   <label className="tb-color-chip" onMouseDown={() => restore()}>
                     <i className="fa-solid fa-highlighter" /> 형광펜
                     <input type="color" defaultValue="#fff59d" onChange={(e) => exec('hiliteColor', e.target.value)} aria-label="형광펜 색" />
                   </label>
+                </div>
+              </div>
+              <div className="tb-menu-group">
+                <span className="tb-menu-label">
+                  저장한 글자색
+                  {colorPresets.length > 0 && (
+                    <button type="button" className="tb-preset-edit" onMouseDown={(e) => e.preventDefault()} onClick={() => setPresetEdit((v) => !v)}>
+                      {presetEdit ? '완료' : '편집'}
+                    </button>
+                  )}
+                </span>
+                <div className="tb-menu-items tb-presets">
+                  {colorPresets.map((c) => (
+                    <span key={c} className="tb-preset">
+                      <button
+                        type="button"
+                        className="tb-preset-swatch"
+                        style={{ background: c }}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          if (presetEdit) return saveColorPresets(colorPresets.filter((x) => x !== c))
+                          setLastColor(c)
+                          exec('foreColor', c)
+                        }}
+                        title={presetEdit ? `${c} 지우기` : `${c} 글자색으로`}
+                        aria-label={presetEdit ? `${c} 지우기` : `${c} 글자색으로`}
+                      >
+                        {presetEdit && <i className="fa-solid fa-xmark" />}
+                      </button>
+                    </span>
+                  ))}
+                  <button type="button" className="tb-preset-add" onMouseDown={(e) => e.preventDefault()} onClick={addColorPreset} title={lastColor ? `방금 쓴 색(${lastColor}) 저장` : '글자색을 쓰면 저장할 수 있어요'}>
+                    <i className="fa-solid fa-plus" />
+                    {lastColor && <span className="tb-preset-dot" style={{ background: lastColor }} />}
+                    저장
+                  </button>
                 </div>
               </div>
               <div className="tb-menu-group">
@@ -596,6 +801,12 @@ export function RichEditor({ value, onChange, mode, onModeChange }) {
                   ))}
                 </div>
               </div>
+              <div className="tb-menu-group">
+                <span className="tb-menu-label">각주 · 번호가 저절로 붙고, 글 맨 아래에 각주 모음이 생겨요</span>
+                <div className="tb-menu-items">
+                  <MI icon="fa-solid fa-superscript" label="각주 넣기" onClick={addFootnote} />
+                </div>
+              </div>
               {TEMPLATES.map((g) => (
                 <div key={g.group} className="tb-menu-group">
                   <span className="tb-menu-label">{g.group}</span>
@@ -639,13 +850,15 @@ export function RichEditor({ value, onChange, mode, onModeChange }) {
       )}
 
       {mode === 'rich' ? (
+        <>
         <div
           ref={editorRef}
           className="editor-area prose"
           contentEditable
           suppressContentEditableWarning
-          onInput={emit}
-          onBlur={emit}
+          onInput={() => emit(true)}
+          onBlur={() => emit(true)}
+          onKeyDown={onKeyDown}
           onPaste={onPaste}
           onClick={onEditorClick}
           onDrop={onDrop}
@@ -654,6 +867,23 @@ export function RichEditor({ value, onChange, mode, onModeChange }) {
           aria-label="본문"
           data-placeholder="내용을 입력하세요"
         />
+        {footnotes.length > 0 && (
+          <div className="editor-footnotes">
+            <span className="editor-footnotes-title">
+              <i className="fa-solid fa-superscript" /> 각주 {footnotes.length}개 · 글을 볼 때 맨 아래에 모여요 (누르면 고쳐요)
+            </span>
+            <ol>
+              {footnotes.map((n, i) => (
+                <li key={i}>
+                  <button type="button" onClick={() => editFootnoteAt(i)}>
+                    {n}
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+        </>
       ) : (
         <textarea
           className="html-area code"

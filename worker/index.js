@@ -140,7 +140,8 @@ function clampStr(value, max) {
 function stripHtml(html) {
   return String(html || '')
     .replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ')
-    // 루비의 작은 글(rt)은 요약·검색에서 빼고, 글자 꾸밈 태그는 띄어쓰기 없이 지워요. (<b>굵</b>게 → 굵게)
+    // 각주 표시(*)는 요약에서 빼요. 루비의 작은 글(rt)도 빼고, 글자 꾸밈 태그는 띄어쓰기 없이 지워요. (<b>굵</b>게 → 굵게)
+    .replace(/<sup class="fn"[^>]*>[\s\S]*?<\/sup>/gi, '')
     .replace(/<(rt|rp)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
     .replace(/<\/?(b|i|u|s|em|strong|span|ruby|mark|small|sub|sup|del|ins|code|a|font)\b[^>]*>/gi, '')
     .replace(/<br\s*\/?>/gi, '\n')
